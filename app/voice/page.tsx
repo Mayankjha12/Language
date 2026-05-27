@@ -39,7 +39,7 @@ const languages = [
     { label: "कॉशुर", value: "ks-IN" },
   
   ];
-  
+
 export default function VoicePage() {
 
   const [message, setMessage] = useState("");
@@ -94,8 +94,8 @@ export default function VoicePage() {
   const startListening = () => {
 
     const SpeechRecognition =
-      window.SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+  (window as any).SpeechRecognition ||
+  (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert("Speech recognition not supported in this browser");
