@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/shared/Navbar";
 import Link from "next/link";
 import {
   Mic,
@@ -8,14 +7,12 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { MovingCard, MovingCardsContainer } from "@/components/ui/moving-cards";
 
 export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#050816] text-white">
-
-      <Navbar />
-
       <section className="max-w-7xl mx-auto px-6 py-10">
 
         {/* HERO */}
@@ -75,8 +72,7 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-3 gap-8 mt-10">
 
           {/* LEFT LARGE */}
-          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
-
+          <MovingCard className="lg:col-span-2">
             <div className="flex items-center justify-between">
 
               <div>
@@ -110,10 +106,7 @@ export default function DashboardPage() {
 
               ].map((item, index) => (
 
-                <div
-                  key={index}
-                  className="rounded-2xl border border-white/10 bg-white/10 p-6 hover:border-purple-500 transition-all"
-                >
+                <MovingCard key={index}>
 
                   <h3 className="text-2xl font-semibold">
                     {item.title}
@@ -129,20 +122,19 @@ export default function DashboardPage() {
 
                   </button>
 
-                </div>
+                </MovingCard>
 
               ))}
 
             </div>
 
-          </div>
+          </MovingCard>
 
           {/* RIGHT SIDE */}
           <div className="flex flex-col gap-6">
 
             {/* Card 1 */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-
+            <MovingCard>
               <div className="flex items-center justify-between">
 
                 <div>
@@ -164,11 +156,10 @@ export default function DashboardPage() {
 
               </div>
 
-            </div>
+            </MovingCard>
 
             {/* Card 2 */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-
+            <MovingCard>
               <div className="flex items-center justify-between">
 
                 <div>
@@ -190,11 +181,10 @@ export default function DashboardPage() {
 
               </div>
 
-            </div>
+            </MovingCard>
 
             {/* Card 3 */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-
+            <MovingCard>
               <h3 className="text-2xl font-semibold">
                 Quick Actions
               </h3>
@@ -223,7 +213,7 @@ export default function DashboardPage() {
 
               </div>
 
-            </div>
+            </MovingCard>
 
           </div>
 

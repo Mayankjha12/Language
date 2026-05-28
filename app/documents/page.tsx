@@ -1,10 +1,6 @@
-import Navbar from "@/components/shared/Navbar";
-
 export default function DocumentsPage() {
   return (
     <main className="min-h-screen bg-[#050816] text-white">
-
-      <Navbar />
 
       <section className="max-w-7xl mx-auto px-6 py-10">
 

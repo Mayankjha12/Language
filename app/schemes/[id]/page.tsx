@@ -1,5 +1,4 @@
 import { schemes } from "@/data/schemes";
-import Navbar from "@/components/shared/Navbar";
 
 export default async function SchemeDetailPage({
   params,
@@ -25,9 +24,6 @@ export default async function SchemeDetailPage({
 
   return (
     <main className="min-h-screen bg-[#050816] text-white">
-
-      <Navbar />
-
       <section className="max-w-5xl mx-auto px-6 py-10">
 
         {/* Hero */}

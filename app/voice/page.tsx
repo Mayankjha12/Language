@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/shared/Navbar";
 import {
   Mic,
   Languages,
@@ -153,9 +152,6 @@ export default function VoicePage() {
 
   return (
     <main className="min-h-screen bg-[#050816] text-white overflow-hidden">
-
-      <Navbar />
-
       <section className="max-w-7xl mx-auto px-6 py-10">
 
         {/* Header */}
