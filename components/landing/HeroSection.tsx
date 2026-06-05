@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { WavyBackground } from "../ui/wavy-background";
 
@@ -23,11 +24,7 @@ export default function HeroSection() {
       blur={16}
       speed="slow"
     >
-
       <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
-
-        {/* Badge */}
-       
 
         {/* Heading */}
         <motion.h1
@@ -101,47 +98,49 @@ export default function HeroSection() {
             gap-5
           "
         >
+          <Link href="/dashboard">
+            <button
+              className="
+                px-8
+                py-4
+                rounded-full
+                bg-gradient-to-r
+                from-purple-500
+                to-blue-600
+                text-white
+                font-medium
+                transition-all
+                duration-300
+                hover:scale-105
+                hover:shadow-2xl
+                hover:shadow-purple-500/30
+              "
+            >
+              Launch Dashboard
+            </button>
+          </Link>
 
-          <button
-            className="
-              px-8
-              py-4
-              rounded-full
-              bg-gradient-to-r
-              from-purple-500
-              to-blue-600
-              text-white
-              font-medium
-              transition-all
-              duration-300
-              hover:scale-105
-              hover:shadow-2xl
-              hover:shadow-purple-500/30
-            "
-          >
-            Launch Dashboard
-          </button>
-
-          <button
-            className="
-              px-8
-              py-4
-              rounded-full
-              border
-              border-white/20
-              bg-white/5
-              backdrop-blur-md
-              text-white
-              font-medium
-              transition-all
-              duration-300
-              hover:bg-white/10
-              hover:scale-105
-            "
-          >
-            Try Voice AI
-          </button>
-
+          <Link href="/voice">
+            <button
+              className="
+                px-8
+                py-4
+                rounded-full
+                border
+                border-white/20
+                bg-white/5
+                backdrop-blur-md
+                text-white
+                font-medium
+                transition-all
+                duration-300
+                hover:bg-white/10
+                hover:scale-105
+              "
+            >
+              Try Voice AI
+            </button>
+          </Link>
         </motion.div>
 
       </div>

@@ -13,33 +13,33 @@ import { InfiniteMovingCards } from "@/components/ui/moving-cards";
 
 const features = [
   {
-    title: "Scheme Eligibility",
-    desc: "Find every government scheme you qualify for instantly.",
+    title: "Scheme Discovery",
+    desc: "Find government schemes based on your profile and eligibility.",
     icon: Landmark,
   },
   {
     title: "Document Explainer",
-    desc: "Upload documents and get simplified AI summaries.",
+    desc: "Upload notices, forms, and PDFs for simplified AI explanations.",
     icon: FileText,
   },
   {
-    title: "Complaint Assistant",
-    desc: "Draft professional complaints with AI assistance.",
+    title: "Complaint Generator",
+    desc: "Generate professional complaints and grievance drafts instantly.",
     icon: ShieldAlert,
   },
   {
-    title: "Voice AI Assistant",
-    desc: "Talk naturally with AI in your own language.",
+    title: "Voice Assistant",
+    desc: "Interact with JanMitra AI using natural voice conversations.",
     icon: Mic,
   },
   {
-    title: "8 Indian Languages",
-    desc: "Supports Hindi, Tamil, Bengali, Telugu and more.",
+    title: "22+ Indian Languages",
+    desc: "Designed for multilingual communication across India.",
     icon: Languages,
   },
   {
-    title: "Elderly Mode",
-    desc: "Accessible experience designed for senior citizens.",
+    title: "Citizen Accessibility",
+    desc: "Built for rural users, senior citizens, and first-time digital users.",
     icon: Accessibility,
   },
 ];
@@ -49,7 +49,7 @@ export default function FeatureGrid() {
     <section className="px-6 py-24 max-w-7xl mx-auto">
 
       <h2 className="text-5xl font-bold text-center mb-20 text-white">
-        One AI for every citizen need
+        One AI for Every Citizen
       </h2>
 
       <InfiniteMovingCards

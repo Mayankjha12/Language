@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 
 const steps = [
-  "You ask or upload",
-  "AI understands",
-  "Smart action",
-  "Done for you",
+  "Speak or Upload",
+  "AI Understands Context",
+  "Schemes & Guidance Generated",
+  "Citizen Takes Action",
 ];
 
 export default function WorkflowSection() {
@@ -37,8 +37,8 @@ export default function WorkflowSection() {
             text-lg
           "
         >
-          JanMitra AI simplifies complex government tasks
-          into a smooth AI-powered experience.
+          Citizens can speak, upload documents, discover eligible schemes,
+          and receive personalized guidance through AI.
         </p>
 
       </div>
@@ -74,7 +74,6 @@ export default function WorkflowSection() {
             "
           >
 
-            {/* Soft Gradient Glow */}
             <div
               className="
                 absolute
@@ -90,7 +89,6 @@ export default function WorkflowSection() {
               "
             />
 
-            {/* Number */}
             <div className="relative z-10">
 
               <div
@@ -108,7 +106,6 @@ export default function WorkflowSection() {
                 0{index + 1}
               </div>
 
-              {/* Title */}
               <h3
                 className="
                   text-2xl
@@ -122,7 +119,6 @@ export default function WorkflowSection() {
 
             </div>
 
-            {/* Bottom Border Glow */}
             <div
               className="
                 absolute

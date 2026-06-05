@@ -15,7 +15,7 @@ export default function SchemesPage() {
   });
 
   const [schemes, setSchemes] = useState<any[]>([]);
-
+  const [aiExplanation, setAiExplanation] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (
@@ -44,11 +44,18 @@ export default function SchemesPage() {
         state: form.state,
       });
 
-      setSchemes(res.data.schemes);
+      setSchemes(res.data.schemes || []);
+
+      setAiExplanation(
+        res.data.aiExplanation || ""
+      );
 
     } catch (error) {
 
       console.log(error);
+
+      setSchemes([]);
+      setAiExplanation("");
 
     } finally {
 
@@ -59,8 +66,6 @@ export default function SchemesPage() {
 
   return (
     <main className="min-h-screen bg-[#050816] text-white">
-
-    
 
       <section className="max-w-7xl mx-auto px-6 py-10">
 
@@ -157,7 +162,9 @@ export default function SchemesPage() {
                 onClick={findSchemes}
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 hover:scale-[1.02] transition-all"
               >
-                {loading ? "Finding..." : "Find My Schemes"}
+                {loading
+                  ? "Finding Schemes..."
+                  : "Find My Schemes"}
               </button>
 
             </div>
@@ -179,61 +186,77 @@ export default function SchemesPage() {
 
             ) : (
 
-              <div className="space-y-5">
+              <>
+                <div className="space-y-5">
 
-                {schemes.map((scheme, index) => (
+                  {schemes.map((scheme, index) => (
 
-                  <a
-                    key={index}
-                    href={`/schemes/${scheme.id}`}
-                    className="block rounded-2xl border border-white/10 bg-white/10 p-6 hover:border-purple-500 hover:-translate-y-1 transition-all"
-                  >
+                    <a
+                      key={index}
+                      href={`/schemes/${scheme.id}`}
+                      className="block rounded-2xl border border-white/10 bg-white/10 p-6 hover:border-purple-500 hover:-translate-y-1 transition-all"
+                    >
 
-                    <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
 
-                      <h3 className="text-2xl font-semibold">
-                        {scheme.name}
-                      </h3>
+                        <h3 className="text-2xl font-semibold">
+                          {scheme.name}
+                        </h3>
 
-                      <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-sm">
-                        {scheme.category}
-                      </span>
+                        <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-sm">
+                          {scheme.category}
+                        </span>
 
+                      </div>
+
+                      <p className="text-gray-400 mt-3 leading-relaxed">
+                        {scheme.description}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2 mt-5">
+
+                        {scheme.benefits?.map(
+                          (benefit: string, i: number) => (
+
+                            <span
+                              key={i}
+                              className="px-3 py-1 rounded-full bg-white/10 text-sm text-gray-300"
+                            >
+                              {benefit}
+                            </span>
+
+                          )
+                        )}
+
+                      </div>
+
+                      <button className="mt-6 px-5 py-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-600">
+                        Explore Scheme
+                      </button>
+
+                    </a>
+
+                  ))}
+
+                </div>
+
+                {aiExplanation && (
+
+                  <div className="mt-8 rounded-2xl border border-purple-500/20 bg-purple-500/10 p-6">
+
+                    <h3 className="text-2xl font-semibold mb-4">
+                      AI Recommendation
+                    </h3>
+
+                    <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                      {aiExplanation}
                     </div>
 
-                    <p className="text-gray-400 mt-3 leading-relaxed">
-                      {scheme.description}
-                    </p>
+                  </div>
 
-                    <div className="flex flex-wrap gap-2 mt-5">
+                )}
 
-                      {scheme.benefits?.map(
-                        (benefit: string, i: number) => (
-
-                          <span
-                            key={i}
-                            className="px-3 py-1 rounded-full bg-white/10 text-sm text-gray-300"
-                          >
-                            {benefit}
-                          </span>
-
-                        )
-                      )}
-
-                    </div>
-
-                    <button className="mt-6 px-5 py-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-600">
-
-                      Explore Scheme
-
-                    </button>
-
-                  </a>
-
-                ))}
-
-              </div>
-
+              </>
             )}
 
           </div>
