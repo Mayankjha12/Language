@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const links = [
-  { name: "Home", href: "/landing" },
+  { name: "Home", href: "/" },
   { name: "Dashboard", href: "/dashboard" },
   { name: "Ask AI", href: "/ask-ai" },
   { name: "Voice AI", href: "/voice" },
