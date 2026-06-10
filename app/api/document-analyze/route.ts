@@ -2,8 +2,8 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: process.env.SARVAM_API_KEY,
+  baseURL: "https://api.sarvam.ai/v1",
 });
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const { documentText } = body;
 
     const completion = await openai.chat.completions.create({
-      model: "openai/gpt-3.5-turbo",
+      model: "sarvam-30b",
 
       messages: [
         {

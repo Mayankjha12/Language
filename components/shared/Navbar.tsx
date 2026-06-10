@@ -12,10 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 
 const links = [
+  { name: "Home", href: "/landing" },
   { name: "Dashboard", href: "/dashboard" },
-  { name: "Schemes", href: "/schemes" },
-  { name: "Documents", href: "/documents" },
-  { name: "Complaint", href: "/complaints" },
+  { name: "Ask AI", href: "/ask-ai" },
   { name: "Voice AI", href: "/voice" },
 ];
 
