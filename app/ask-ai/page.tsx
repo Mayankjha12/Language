@@ -87,13 +87,7 @@ export default function AskAIPage() {
   const [file, setFile] = useState<File | null>(null);
   const [documentLoading, setDocumentLoading] = useState(false);
   const [docLanguage, setDocLanguage] = useState("english");
-  const [analysisResult, setAnalysisResult] = useState<{
-    purpose?: string;
-    dates?: string;
-    requiredDocs?: string;
-    actions?: string;
-    summary?: string;
-  } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any | null>(null);
 
   // Multi-lingual Text Transformer Engine Function
   const translateCardElement = (scheme: any) => {
@@ -167,7 +161,6 @@ export default function AskAIPage() {
     }
   };
 
-  // FIXED: handleAnalyze function accurately hooks into data attributes without undefined index leakage
   const handleAnalyze = async () => {
     try {
       if (!file) {
@@ -180,16 +173,13 @@ export default function AskAIPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Step 1: Trigger document upload router
       const uploadRes = await axios.post("/api/document-upload", formData);
 
-      // Step 2: Fire analysis module passing language explicitly
       const analyzeRes = await axios.post("/api/document-analyze", { 
         documentText: uploadRes.data.text, 
         language: docLanguage 
       });
 
-      // FIXED: Assigning the full object direct data layout allocation mapped to keys
       setAnalysisResult(analyzeRes.data);
     } catch (error) { 
       console.log(error); 
@@ -200,39 +190,16 @@ export default function AskAIPage() {
   };
 
   const cards = [
-    {
-      tab: "schemes" as Tab, icon: "🎯", accent: "purple", badge: "Most Popular",
-      title: "Discover Eligible Schemes", description: "Find central & state government schemes tailored to your age, income, category, and occupation.",
-      steps: ["Fill profile", "AI matches", "Apply"], cta: "Find My Schemes",
-      iconBg: "bg-[rgba(139,92,246,0.15)] border-[rgba(139,92,246,0.25)]", badgeClass: "bg-[rgba(139,92,246,0.15)] text-[#a78bfa] border-[rgba(139,92,246,0.25)]",
-      glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(139,92,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(139,92,246,0.4)]",
-      btnClass: "bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)]",
-    },
-    {
-      tab: "complaints" as Tab, icon: "📝", accent: "rose", badge: null,
-      title: "Draft & File Complaints", description: "Generate formal, department-specific complaints using AI. Available in English and Hindi.",
-      steps: ["Describe issue", "AI drafts", "Submit"], cta: "Draft Complaint",
-      iconBg: "bg-[rgba(244,63,94,0.15)] border-[rgba(244,63,94,0.25)]", badgeClass: "",
-      glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(244,63,94,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(244,63,94,0.4)]",
-      btnClass: "bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#f43f5e] hover:to-[#e11d48] shadow-[0_4px_15px_rgba(225,29,72,0.3)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.4)]",
-    },
-    {
-      tab: "documents" as Tab, icon: "📄", accent: "teal", badge: null,
-      title: "Understand Documents", description: "Upload any government document — Aadhaar, ration card, notices — get a plain-language summary instantly.",
-      steps: ["Upload file", "AI reads", "Plain summary"], cta: "Analyze Document",
-      iconBg: "bg-[rgba(20,184,166,0.15)] border-[rgba(20,184,166,0.25)]", badgeClass: "",
-      glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(20,184,166,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(20,184,166,0.4)]",
-      btnClass: "bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#14b8a6] hover:to-[#0d9488] shadow-[0_4px_15px_rgba(13,148,136,0.3)] hover:shadow-[0_6px_20px_rgba(13,148,136,0.4)]",
-    },
-    {
-      tab: "help" as Tab, icon: "💬", accent: "blue", badge: null,
-      title: "Talk to JanMitra", description: "Ask anything — pensions, certificates, RTI, voter ID, ration card, or any civic grievance.",
-      steps: ["Type question", "AI responds", "Take action"], cta: "Start Chatting",
-      iconBg: "bg-[rgba(59,130,246,0.15)] border-[rgba(59,130,246,0.25)]", badgeClass: "",
-      glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(59,130,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(59,130,246,0.4)]",
-      btnClass: "bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)]",
-    },
+    { tab: "schemes" as Tab, icon: "🎯", accent: "purple", badge: "Most Popular", title: "Discover Eligible Schemes", description: "Find central & state government schemes tailored to your age, income, category, and occupation.", steps: ["Fill profile", "AI matches", "Apply"], cta: "Find My Schemes", iconBg: "bg-[rgba(139,92,246,0.15)] border-[rgba(139,92,246,0.25)]", badgeClass: "bg-[rgba(139,92,246,0.15)] text-[#a78bfa] border-[rgba(139,92,246,0.25)]", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(139,92,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(139,92,246,0.4)]", btnClass: "bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)]" },
+    { tab: "complaints" as Tab, icon: "📝", accent: "rose", badge: null, title: "Draft & File Complaints", description: "Generate formal, department-specific complaints using AI. Available in English and Hindi.", steps: ["Describe issue", "AI drafts", "Submit"], cta: "Draft Complaint", iconBg: "bg-[rgba(244,63,94,0.15)] border-[rgba(244,63,94,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(244,63,94,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(244,63,94,0.4)]", btnClass: "bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#f43f5e] hover:to-[#e11d48] shadow-[0_4px_15px_rgba(225,29,72,0.3)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.4)]" },
+    { tab: "documents" as Tab, icon: "📄", accent: "teal", badge: null, title: "Understand Documents", description: "Upload any government document — Aadhaar, ration card, notices — get a plain-language summary instantly.", steps: ["Upload file", "AI reads", "Plain summary"], cta: "Analyze Document", iconBg: "bg-[rgba(20,184,166,0.15)] border-[rgba(20,184,166,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(20,184,166,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(20,184,166,0.4)]", btnClass: "bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#14b8a6] hover:to-[#0d9488] shadow-[0_4px_15px_rgba(13,148,136,0.3)] hover:shadow-[0_6px_20px_rgba(13,148,136,0.4)]" },
+    { tab: "help" as Tab, icon: "💬", accent: "blue", badge: null, title: "Talk to JanMitra", description: "Ask anything — pensions, certificates, RTI, voter ID, ration card, or any civic grievance.", steps: ["Type question", "AI responds", "Take action"], cta: "Start Chatting", iconBg: "bg-[rgba(59,130,246,0.15)] border-[rgba(59,130,246,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(59,130,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(59,130,246,0.4)]", btnClass: "bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)]" }
   ];
+
+  // FIXED: Declared precisely before the main render block to secure top-level compiler scope variables
+  const langKey = schemeForm.language === "hindi" ? "hindi" : "english";
+  const dict = uiTranslationMap[langKey];
+  const statesArrayToRender = schemeForm.language === "hindi" ? indianStatesHi : indianStatesEn;
 
   return (
     <main className="min-h-screen bg-[#050816] text-white">
@@ -446,6 +413,7 @@ export default function AskAIPage() {
             {/* COMPLAINTS */}
             {activeTab === "complaints" && (
               <div className="grid lg:grid-cols-2 gap-6">
+                {/* LEFT SIDE PANEL: ASSISTANT CONSOLE */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                     <h2 className="text-2xl sm:text-3xl font-bold">
@@ -523,6 +491,7 @@ export default function AskAIPage() {
                   </button>
                 </div>
 
+                {/* RIGHT SIDE PANEL: AI OUTPUT DISPLAY */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-6">
                     {language === "hindi" ? "एआई जनरेटेड शिकायत" : "AI Generated Complaint"}
@@ -585,7 +554,7 @@ export default function AskAIPage() {
               </div>
             )}
 
-            {/* DOCUMENTS TAB - 100% ALIGNED AND FIXED */}
+            {/* DOCUMENTS TAB */}
             {activeTab === "documents" && (
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* LEFT CONSOLE */}
@@ -653,40 +622,47 @@ export default function AskAIPage() {
                       <>
                         <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
                           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "उद्देश्य (Purpose)" : "Purpose"}
+                            {docLanguage === "hindi" ? "उद्देश्य" : "Purpose"}
                           </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.purpose}</p>
-                        </div>
-
-                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां (Important Dates)" : "Important Dates"}
-                          </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.dates}</p>
-                        </div>
-
-                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "आवश्यक दस्तावेज (Required Documents)" : "Required Documents"}
-                          </h3>
-                          {/* FIXED: Hooks safely into layout keys regardless of string mutations from model */}
                           <p className="text-white/70 text-sm leading-relaxed">
-                            {analysisResult.requiredDocs || (analysisResult as any).required_documents || "No specific paperwork mentioned."}
+                            {analysisResult["उद्देश्य"] || analysisResult.purpose}
                           </p>
                         </div>
 
                         <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
                           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "आवश्यक कार्रवाई (Actions Needed)" : "Actions Needed"}
+                            {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां" : "Important Dates"}
                           </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.actions}</p>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["महत्वपूर्ण_तिथियां"] || analysisResult.dates}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक दस्तावेज" : "Required Documents"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["आवश्यक_दस्तावेज"] || analysisResult.requiredDocs}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक कार्रवाई" : "Actions Needed"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["आवश्यक_कार्रवाई"] || analysisResult.actions}
+                          </p>
                         </div>
 
                         <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
                           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "सरल सारांश (Simple Summary)" : "Simple Summary"}
+                            {docLanguage === "hindi" ? "सरल सारांश" : "Simple Summary"}
                           </h3>
-                          <p className="text-white/90 text-sm font-medium leading-relaxed">{analysisResult.summary}</p>
+                          <p className="text-white/90 text-sm font-medium leading-relaxed">
+                            {analysisResult["संक्षिप्त_सारांश"] || analysisResult.summary}
+                          </p>
                         </div>
                       </>
                     )}
