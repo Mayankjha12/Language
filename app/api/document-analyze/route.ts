@@ -12,35 +12,45 @@ export async function POST(req: Request) {
     const { documentText, language } = body;
     const targetLang = (language || "english").toLowerCase();
 
-    const systemPrompt = `You are JanMitra AI, an expert constitutional and legal document analyzer. Your absolute directive is to extract structural layout matrices from the provided context and format them into a strict, valid JSON container matching the schema parameters exactly.
+    console.log(`🤖 Dynamic Bilingual Analyzer active. Target Language Mode: ${targetLang}`);
 
-JSON TEMPLATE SCHEMATICS REQUIRED:
+    // Configured strict structural prompt blueprints depending on language state
+    const systemPrompt = `You are JanMitra AI, an expert conversational document analyzer and core translator. Your absolute directive is to analyze the provided source document text and format the extracted points into a strict, valid JSON object matching the requested schema keys exactly.
+
+STRICT SCHEMA SCHEMATICS REQUIRED BASED ON LANGUAGE:
+
+If target language is "hindi", you MUST return this exact JSON structure with Hindi keys and simple Devnagari sentences as values:
 {
-  "purpose": "Core objective or reason behind the government notification",
-  "dates": "Crucial deadlines, frames, implementation or target dates",
-  "requiredDocs": "Tokens, forms, identity cards, or specific physical proofs needed",
-  "actions": "Step-by-step sequential operations or compliance steps citizens must take",
-  "summary": "A 1-2 sentence simplified layman translation explanation wrap-up"
+  "उद्देश्य": "दस्तावेज़ का मुख्य उद्देश्य या एजेंडा क्या है",
+  "महत्वपूर्ण_तिथियां": "सभी समय-सीमाएं, समय सीमा फ़्रेम, या लागू होने की तारीखें",
+  "आवश्यक_दस्तावेज": "नागरिकों को जमा करने के लिए आवश्यक प्रमाण पत्र या दस्तावेज",
+  "आवश्यक_कार्रवाई": "उपयोगकर्ता को क्या कदम उठाने की आवश्यकता है",
+  "संक्षिप्त_सारांश": "पूरे दस्तावेज़ का 1-2 पंक्तियों में आसान और सरल सारांश"
 }
 
-STRICT INSTRUCTION RULES:
-1. If target language choice state is "hindi", you MUST write the values for all 5 JSON object keys natively in very simple, conversational everyday HINDI (Devnagari Script) text sentences so a local citizen can read it instantly. Avoid heavy legal or complex jargon.
-2. If target language is "english", write the values in clean regular English sentences.
-3. CRITICAL: Do not output any markdown formatting like code blocks (\`\`\`json), asterisks (*), list dashes (-), or hashes (#). 
-4. Avoid any raw double-quotes inside the text values. Use single quotes if quoting anything inside a string. Output ONLY the valid raw JSON brace object, nothing else.`;
+If target language is "english", you MUST return this exact JSON structure with English keys and values:
+{
+  "purpose": "Core objective or reason behind this specific document",
+  "dates": "All critical deadlines, timelines, or release dates mentioned",
+  "requiredDocs": "Specific certificates, forms, or identity cards needed from the user",
+  "actions": "Clear step-by-step actions that the reader must perform",
+  "summary": "A clean 1-2 sentence simplified layman summary wrap-up of the text"
+}
 
-    console.log(`🤖 Analysis engine routed to target language stack: ${targetLang}`);
+STRICT CONSTRAINTS:
+1. Output ONLY the single raw valid JSON object. Do not include markdown code block syntax (\`\`\`json), asterisks (*), list dashes (-), or hashes (#). 
+2. Avoid any raw double-quotes inside the text values. Use single quotes if quoting anything inside a string value.`;
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Target Output Interface Language: ${targetLang}\n\nDocument Stream Text Content:\n${documentText}` }
+        { role: "user", content: `Target Output Language Code: ${targetLang}\n\nDocument text context payload:\n${documentText}` }
       ],
       temperature: 0.1
     });
 
-    let outputText = completion.choices[0].message.content || "{}";
+    let outputText = completion.choices[0].message.content?.trim() || "{}";
     
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
@@ -60,28 +70,34 @@ STRICT INSTRUCTION RULES:
       return NextResponse.json(parsed);
 
     } catch (parseError) {
-      console.warn("⚠️ Structural drift in model parsing framework, deploying fallback sequence:", parseError);
+      console.warn("⚠️ JSON Parse failed due to script tracking variations. Booting regex recovery:", parseError);
       
+      const extractKey = (key: string, sourceText: string): string => {
+        const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
+        const match = sourceText.match(regex);
+        return match ? match[1] : "";
+      };
+
       if (targetLang === "hindi") {
         return NextResponse.json({
-          purpose: "इस आदेश का मुख्य उद्देश्य आवासीय कल्याण संघों (RWAs) और व्यावसायिक प्रतिष्ठानों जैसे बड़े कचरा उत्पादकों को स्रोत पर ही कचरे का प्रसंस्करण और पृथक्करण करने के लिए अनिवार्य बनाना है ताकि नगर पालिका व्यवस्था में सुधार किया जा सके।",
-          dates: "यह अधिसूचना १२ मई २०२६ को जारी की गई थी। इसके नियम लागू करने की अंतिम समय सीमा १५ जुलाई २०२६ तय की गई है।",
-          requiredDocs: "दस्तावेज़ में किसी विशिष्ट नागरिक फ़ॉर्म को जमा करने की आवश्यकता नहीं बताई गई है; यह सीधे सभी पंजीकृत आवासीय कल्याण संघों (RWAs) पर लागू होता है।",
-          actions: "कचरे को तीन मुख्य श्रेणियों (गीला, सूखा और खतरनाक) में अलग-अलग छांटें और अपनी सोसायटी परिसरों में स्थानीय कंपोस्टिंग प्लांट स्थापित करें।",
-          summary: "यह आदेश बड़े कचरा उत्पादकों जैसे आवासीय संघों (RWAs) को स्रोत पर ही कचरा प्रबंधन की जिम्मेदारी सौंपता है।"
+          "उद्देश्य": extractKey("उद्देश्य", outputText) || "विवरण उपलब्ध नहीं है",
+          "महत्वपूर्ण_तिथियां": extractKey("महत्वपूर्ण_तिथियां", outputText) || "कोई विशिष्ट समय-सीमा नहीं मिली",
+          "आवश्यक_दस्तावेज": extractKey("आवश्यक_दस्तावेज", outputText) || "कोई दस्तावेज़ निर्दिष्ट नहीं है",
+          "आवश्यक_कार्रवाई": extractKey("आवश्यक_कार्रवाई", outputText) || "कोई कार्रवाई आवश्यक नहीं है",
+          "संक्षिप्त_सारांश": extractKey("संक्षिप्त_सारांश", outputText) || "संक्षिप्त सारांश निकालने में असमर्थ"
         });
       } else {
         return NextResponse.json({
-          purpose: "The primary purpose of this order is to mandate that large waste generators must process and segregate waste at the source to improve municipal management.",
-          dates: "Issued on 12th May, 2026. Decentralized processing setups must be established within 60 days. Final target deadline is 15th July, 2026.",
-          requiredDocs: "No specific form submissions are requested; applies directly to all registered RWAs and Bulk Waste Generators.",
-          actions: "Sort waste into wet, dry, and hazardous streams. Construct on-site composters or biomethanization units before the deadline.",
-          summary: "This order requires large waste generators like RWAs and commercial setups to manage and process waste locally at the source."
+          purpose: extractKey("purpose", outputText) || "Objective not specified in document",
+          dates: extractKey("dates", outputText) || "No specific timelines found",
+          requiredDocs: extractKey("requiredDocs", outputText) || "No required documents specified",
+          actions: extractKey("actions", outputText) || "No immediate actions needed",
+          summary: extractKey("summary", outputText) || "Layman summary extraction unavailable"
         });
       }
     }
   } catch (error) {
-    console.error("❌ Document analyze loop critical failure:", error);
-    return NextResponse.json({ error: "Analysis matrix engine engine failure." }, { status: 500 });
+    console.error("❌ Critical fault in dynamic bilingual parsing node:", error);
+    return NextResponse.json({ error: "Dynamic parser execution fault." }, { status: 500 });
   }
 }
