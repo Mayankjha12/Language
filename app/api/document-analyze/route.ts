@@ -12,53 +12,46 @@ export async function POST(req: Request) {
     const { documentText, language } = body;
     const targetLang = (language || "english").toLowerCase();
 
-    console.log(`🤖 Dynamic Bilingual Analyzer active. Target Language Mode: ${targetLang}`);
+    console.log(`🤖 Dynamic Bilingual Analyzer Engine Active. Target Language Mode: ${targetLang}`);
 
-    // Configured strict structural prompt blueprints depending on language state
-    const systemPrompt = `You are JanMitra AI, an expert conversational document analyzer and core translator. Your absolute directive is to analyze the provided source document text and format the extracted points into a strict, valid JSON object matching the requested schema keys exactly.
+    // STRICT INSTRUCTION: Keys must ALWAYS remain standard English parameters, only values change language dynamically
+    const systemPrompt = `You are JanMitra AI, an expert conversational document analyzer and core translator. Your absolute directive is to analyze the provided source document text and format the extracted points into a strict, valid JSON object matching these exact schema keys:
 
-STRICT SCHEMA SCHEMATICS REQUIRED BASED ON LANGUAGE:
-
-If target language is "hindi", you MUST return this exact JSON structure with Hindi keys and simple Devnagari sentences as values:
 {
-  "उद्देश्य": "दस्तावेज़ का मुख्य उद्देश्य या एजेंडा क्या है",
-  "महत्वपूर्ण_तिथियां": "सभी समय-सीमाएं, समय सीमा फ़्रेम, या लागू होने की तारीखें",
-  "आवश्यक_दस्तावेज": "नागरिकों को जमा करने के लिए आवश्यक प्रमाण पत्र या दस्तावेज",
-  "आवश्यक_कार्रवाई": "उपयोगकर्ता को क्या कदम उठाने की आवश्यकता है",
-  "संक्षिप्त_सारांश": "पूरे दस्तावेज़ का 1-2 पंक्तियों में आसान और सरल सारांश"
+  "purpose": "Value data sentence here",
+  "dates": "Value data sentence here",
+  "requiredDocs": "Value data sentence here",
+  "actions": "Value data sentence here",
+  "summary": "Value data sentence here"
 }
 
-If target language is "english", you MUST return this exact JSON structure with English keys and values:
-{
-  "purpose": "Core objective or reason behind this specific document",
-  "dates": "All critical deadlines, timelines, or release dates mentioned",
-  "requiredDocs": "Specific certificates, forms, or identity cards needed from the user",
-  "actions": "Clear step-by-step actions that the reader must perform",
-  "summary": "A clean 1-2 sentence simplified layman summary wrap-up of the text"
-}
-
-STRICT CONSTRAINTS:
-1. Output ONLY the single raw valid JSON object. Do not include markdown code block syntax (\`\`\`json), asterisks (*), list dashes (-), or hashes (#). 
-2. Avoid any raw double-quotes inside the text values. Use single quotes if quoting anything inside a string value.`;
+STRICT LANGUAGE & TRANSLATION LAWS:
+1. IF TARGET LANGUAGE IS "HINDI": You MUST read the input text context and dynamically translate, extract, and write the values for all 5 JSON object keys ("purpose", "dates", "requiredDocs", "actions", "summary") natively in very simple, conversational everyday HINDI (Devnagari Script) text sentences so an ordinary local citizen can understand it instantly. Avoid heavy legal or complex words.
+2. IF TARGET LANGUAGE IS "ENGLISH": Extract and write the values in clean regular English sentences.
+3. ABSOLUTE CONSTRAINT: Output ONLY a single valid raw JSON object. Do not include markdown code block syntax (\`\`\`json), asterisks (*), list dashes (-), or hashes (#). 
+4. Avoid any raw double-quotes inside the text values. Use single quotes if quoting anything inside a string value.`;
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Target Output Language Code: ${targetLang}\n\nDocument text context payload:\n${documentText}` }
+        { role: "user", content: `Target Output Translation Language: ${targetLang}\n\nDocument Content to Process and Translate:\n${documentText}` }
       ],
       temperature: 0.1
     });
 
     let outputText = completion.choices[0].message.content?.trim() || "{}";
     
+    // Clean any unexpected markdown blocks out instantly
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
     
+    // Remove newlines and tabs which break string structures
     outputText = outputText.replace(/\n/g, " ").replace(/\r/g, " ").trim();
 
     try {
+      // Step 1: Attempt standard direct JSON parsing
       const parsed = JSON.parse(outputText);
       
       Object.keys(parsed).forEach((key) => {
@@ -70,34 +63,28 @@ STRICT CONSTRAINTS:
       return NextResponse.json(parsed);
 
     } catch (parseError) {
-      console.warn("⚠️ JSON Parse failed due to script tracking variations. Booting regex recovery:", parseError);
+      console.warn("⚠️ JSON Parse failed due to translation character escaping. Initiating dynamic regex parsing engine:", parseError);
       
+      // Step 2: Fallback Regex Extractor to fetch dynamic content line-by-line without throwing errors
       const extractKey = (key: string, sourceText: string): string => {
         const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
         const match = sourceText.match(regex);
         return match ? match[1] : "";
       };
 
-      if (targetLang === "hindi") {
-        return NextResponse.json({
-          "उद्देश्य": extractKey("उद्देश्य", outputText) || "विवरण उपलब्ध नहीं है",
-          "महत्वपूर्ण_तिथियां": extractKey("महत्वपूर्ण_तिथियां", outputText) || "कोई विशिष्ट समय-सीमा नहीं मिली",
-          "आवश्यक_दस्तावेज": extractKey("आवश्यक_दस्तावेज", outputText) || "कोई दस्तावेज़ निर्दिष्ट नहीं है",
-          "आवश्यक_कार्रवाई": extractKey("आवश्यक_कार्रवाई", outputText) || "कोई कार्रवाई आवश्यक नहीं है",
-          "संक्षिप्त_सारांश": extractKey("संक्षिप्त_सारांश", outputText) || "संक्षिप्त सारांश निकालने में असमर्थ"
-        });
-      } else {
-        return NextResponse.json({
-          purpose: extractKey("purpose", outputText) || "Objective not specified in document",
-          dates: extractKey("dates", outputText) || "No specific timelines found",
-          requiredDocs: extractKey("requiredDocs", outputText) || "No required documents specified",
-          actions: extractKey("actions", outputText) || "No immediate actions needed",
-          summary: extractKey("summary", outputText) || "Layman summary extraction unavailable"
-        });
-      }
+      // Full dynamic data mapping with local fallback strings matching the targeted language state
+      const dynamicParsed = {
+        purpose: extractKey("purpose", outputText) || (targetLang === "hindi" ? "दस्तावेज़ में उद्देश्य निर्दिष्ट नहीं है" : "Objective not specified in document"),
+        dates: extractKey("dates", outputText) || (targetLang === "hindi" ? "कोई महत्वपूर्ण तिथियां नहीं मिलीं" : "No specific timelines found"),
+        requiredDocs: extractKey("requiredDocs", outputText) || (targetLang === "hindi" ? "कोई आवश्यक दस्तावेज़ उल्लेखित नहीं हैं" : "No required documents specified"),
+        actions: extractKey("actions", outputText) || (targetLang === "hindi" ? "कोई विशिष्ट कार्रवाई आवश्यक नहीं है" : "No immediate actions needed"),
+        summary: extractKey("summary", outputText) || (targetLang === "hindi" ? "संक्षिप्त सारांश निकालने में असमर्थ" : "Layman summary extraction unavailable")
+      };
+
+      return NextResponse.json(dynamicParsed);
     }
   } catch (error) {
-    console.error("❌ Critical fault in dynamic bilingual parsing node:", error);
-    return NextResponse.json({ error: "Dynamic parser execution fault." }, { status: 500 });
+    console.error("❌ Document analyze loop critical failure:", error);
+    return NextResponse.json({ error: "Dynamic translation engine failure." }, { status: 500 });
   }
 }
