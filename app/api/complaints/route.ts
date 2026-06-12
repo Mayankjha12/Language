@@ -5,170 +5,120 @@ const openai = new OpenAI({
   apiKey: process.env.SARVAM_API_KEY,
   baseURL: "https://api.sarvam.ai/v1",
 });
+
 export async function POST(req: Request) {
+  let targetLang = "english";
+
   try {
+    const { issue, issueType, priority, answers, language } = await req.json();
+    targetLang = language || "english";
 
-    const {
-      issue,
-      issueType,
-      priority,
-      answers,
-      language,
-    } = await req.json();
+    // Strict System Prompt Engine targeting Sarvam 30B JSON Predictability
+    const systemPrompt = `You are JanMitra AI, an expert citizen grievance processing automation system. Your absolute directive is to process a user's local civic issue report and map it into a standardized JSON container template.
 
-    const completion =
-      await openai.chat.completions.create({
-        model: "sarvam-30b",
+STRICT EXECUTION PROTOCOLS:
+1. "department": Classify and assign the most appropriate local or state government department name. If target language choice is "hindi", write the department name cleanly in pure HINDI (Devnagari Script) text.
+2. "complaint": Draft a formal, highly professional legal-grade Complaint Letter of approximately 250-350 words matching constitutional submission standards. CRITICAL: This letter MUST ALWAYS be written in professional ENGLISH language, regardless of user language choice.
+3. "recommendations": Provide exactly 4 sequential, clean, actionable next steps or instructions for the citizen. If target language choice is "hindi", write these 4 steps purely in shuddh HINDI (Devnagari Script).
 
-        messages: [
-          {
-            role: "system",
-            content: `
-You are JanMitra AI, an intelligent citizen grievance assistant.
+STRICT FORMATTING DEFENSE:
+- DO NOT return any markdown characters. Absolute zero asterisks (*), hashes (#), or bullet list lines (-).
+- Write fluid, clean sentences. Use raw newline characters for formal letter line breaks inside the string.
+- Your entire output response must be a single, valid, raw JSON object. Do not enclose it in any markdown code blocks.
 
-Your responsibilities:
-
-1. Analyze the citizen's complaint.
-2. Identify the MOST APPROPRIATE government department.
-3. Generate a detailed formal complaint letter.
-4. Provide practical recommendations.
-
-IMPORTANT:
-
-- User may write in Hindi or English.
-- ALWAYS generate the final complaint in PROFESSIONAL ENGLISH.
-- Generate a complete formal complaint letter of 250–350 words.
-- Include:
-  - Subject line
-  - Respected Sir/Madam
-  - Detailed issue description
-  - Impact on citizens
-  - Duration of issue
-  - Previous complaint attempts (if available)
-  - Request for immediate action
-  - Professional closing
-
-Format:
-
-Subject: ...
-
-Respected Sir/Madam,
-
-...
-
-Sincerely,
-Concerned Citizen
-
-DEPARTMENT CLASSIFICATION RULES:
-
-Determine the department primarily from the ISSUE DESCRIPTION and ADDITIONAL INFORMATION.
-
-Treat the selected Issue Type only as a hint.
-
-If the issue description conflicts with the selected issue type, prioritize the issue description.
-
-Examples:
-
-- Water shortage → Water Supply Department
-- Road damage / potholes → Public Works Department (PWD)
-- Garbage collection → Sanitation Department
-- Street lights → Electricity Department
-- Consumer fraud → Consumer Affairs Department
-- Cyber fraud → Cyber Crime Cell
-- Women's safety → Police Department
-- Corruption → Vigilance Department
-- Property tax issues → Municipal Corporation
-- Sewage overflow → Sewerage Department
-
-DO NOT always return Water Supply Department.
-
-RECOMMENDATIONS:
-
-Provide exactly 4 practical recommendations specific to the issue.
-
-Return ONLY valid JSON.
-
+EXPECTED VALID JSON OUTPUT STRUCTURAL MATRIX:
 {
-  "department": "",
-  "complaint": "",
+  "department": "Department Name String",
+  "complaint": "Subject: ...\\n\\nRespected Sir/Madam,\\n\\n[Full Formal Letter Draft Text]\\n\\nSincerely,\\nConcerned Citizen",
   "recommendations": [
-    "",
-    "",
-    "",
-    ""
+    "Clean actionable recommendation line one",
+    "Clean actionable recommendation line two",
+    "Clean actionable recommendation line three",
+    "Clean actionable recommendation line four"
   ]
-}
-`,
-          },
+}`;
 
-          {
-            role: "user",
-            content: `
-User Selected Issue Type:
-${issueType}
+    console.log(`📝 Dispatching grievance router engine under target interface layer: ${targetLang}`);
 
-Priority:
-${priority}
+    const completion = await openai.chat.completions.create({
+      model: "sarvam-30b",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: `Selected Interface Language Choice: ${targetLang}
+Grievance Category Context: ${issueType}
+Priority Framework Level: ${priority}
+Primary Citizen Statement: ${issue}
+Follow-up Validation Q&A Pair Payload: ${JSON.stringify(answers)}`
+        }
+      ],
+      temperature: 0.1
+    });
 
-Input Language:
-${language}
+    let content = completion.choices[0].message.content || "{}";
+    
+    // Clear markdown wrapping artifacts cleanly without breaking strings
+    content = content
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
-Actual Issue Description:
-${issue}
-
-Additional Answers:
-${JSON.stringify(answers, null, 2)}
-`,
-          },
-        ],
-
-        temperature: 0.7,
-      });
-
-    const content =
-      completion.choices[0].message.content || "{}";
-
-    return NextResponse.json(
-      JSON.parse(content)
-    );
-
-  } catch (error) {
-
-    console.log(error);
-
-    return NextResponse.json(
-      {
-        department:
-          "Public Grievance Department",
-
-        complaint: `Subject: Complaint Regarding Public Service Issue
-
-Respected Sir/Madam,
-
-I would like to bring to your attention a matter of public concern that requires immediate intervention. The issue described has caused inconvenience to citizens and is affecting daily life in the locality.
-
-Despite continued difficulties faced by residents, the matter remains unresolved. Such issues can significantly impact public welfare, safety, and access to essential services. Immediate investigation and corrective measures are therefore necessary.
-
-I respectfully request the concerned department to review this complaint, conduct an inspection if required, and take appropriate action at the earliest possible opportunity. Timely resolution of the issue will greatly benefit the affected citizens and help restore normal conditions.
-
-I would appreciate receiving an update regarding the actions taken in response to this complaint.
-
-Thank you for your attention and cooperation.
-
-Sincerely,
-Concerned Citizen`,
-
-        recommendations: [
-          "Add exact location details",
-          "Keep supporting evidence ready",
-          "Mention issue duration clearly",
-          "Save the complaint reference number",
-        ],
-      },
-      {
-        status: 500,
+    try {
+      const parsed = JSON.parse(content);
+      
+      if (parsed.department) {
+        parsed.department = parsed.department.replace(/[*#\-–•]/g, "").trim();
       }
-    );
+      if (parsed.complaint) {
+        parsed.complaint = parsed.complaint.replace(/[*#\-–•]/g, "").trim();
+      }
+      if (parsed.recommendations && Array.isArray(parsed.recommendations)) {
+        parsed.recommendations = parsed.recommendations.map((r: string) => 
+          r.replace(/[*#\-–•]/g, "").trim()
+        );
+      }
+      
+      return NextResponse.json(parsed);
 
+    } catch (parseError) {
+      console.warn("⚠️ JSON Extraction fallback invoked due to model syntax formatting drift:", parseError);
+      
+      // Fixed: Declared properly within the catch scope where the return statement is located
+      let fallbackDept = issueType ? `${issueType} Department` : "Public Grievance Division";
+      
+      if (targetLang === "hindi") {
+        if (issueType === "Water Supply") fallbackDept = "जल आपूर्ति एवं स्वच्छता विभाग";
+        if (issueType === "Electricity") fallbackDept = "विद्युत शिकायत प्रभाग (Electricity Board)";
+        if (issueType === "Road Damage") fallbackDept = "लोक निर्माण विभाग (PWD)";
+        if (issueType === "Garbage") fallbackDept = "नगर निगम स्वच्छता नियंत्रण बोर्ड";
+      }
+
+      const fallbackComplaint = `Subject: Formal Grievance Letter Regarding ${issueType || "Public Infrastructure Degradation"}\n\nRespected Sir/Madam,\n\nI am writing to formally lodge a complaint regarding the critical public utility breakdown affecting our locality. Specifically, the issue entails: ${issue || "unresolved civic utility infrastructure issues"}.\n\nThis ongoing negligence has caused severe distress to the residents. We urge your esteemed department to evaluate this application and restore normal civil operability immediately.\n\nThank you for your prompt consideration.\n\nSincerely,\nConcerned Citizen`;
+
+      const fallbackRecommendations = targetLang === "hindi" ? [
+        "शिकायत की डिजिटल संदर्भ संख्या (Reference Token) संभाल कर रखें।",
+        "क्षेत्रीय स्थल के सहायक साक्ष्य या तस्वीरें प्रमाण हेतु एकत्र करें।",
+        "पीजी पोर्टल (PG Portal) पर लॉगिन करके शिकायत की वर्तमान स्थिति ट्रैक करें।",
+        "यदि ७ दिनों के भीतर समाधान न हो, तो संबंधित विभाग के नोडल अधिकारी से संपर्क करें।"
+      ] : [
+        "Save the generated application reference token securely.",
+        "Keep local supporting visual evidence or pictures ready for verifications.",
+        "Track the structural grievance lifecycle status live using PG Portal dashboards.",
+        "Escalate the matter to the regional nodal officer if resolution exceeds 7 working days."
+      ];
+
+      return NextResponse.json({
+        department: fallbackDept,
+        complaint: fallbackComplaint,
+        recommendations: fallbackRecommendations
+      });
+    }
+  } catch (error) {
+    console.error("❌ Complaints Core Loop Fatal Exception Trace:", error);
+    return NextResponse.json({ error: "Processing pipeline runtime failure" }, { status: 500 });
   }
 }

@@ -7,94 +7,72 @@ const openai = new OpenAI({
 });
 
 export async function POST(req: Request) {
-
   let language = "english";
-
   try {
-
     const body = await req.json();
+    const { issue, issueType } = body;
+    language = body.language || "english";
 
-    const issue =
-      body.issue;
+    const completion = await openai.chat.completions.create({
+      model: "sarvam-30b",
+      messages: [
+        {
+          role: "system",
+          content: `Generate exactly 5 highly analytical conversational follow-up questions to gather deep context about a citizen's civic issue.
 
-    const issueType =
-      body.issueType;
-
-    language =
-      body.language || "english";
-
-    const completion =
-      await openai.chat.completions.create({
-        model: "sarvam-30b",
-
-        messages: [
-          {
-            role: "system",
-            content: `
-Generate exactly 5 follow-up questions.
-
-Language: ${language}
-
-If language is "hindi", return all questions in Hindi.
-
-If language is "english", return all questions in English.
-
-Return ONLY valid JSON.
+STRICT SCRIPT LOCKS:
+- If language parameter is "hindi", you MUST return all 5 questions in pure Hindi (Devnagari script).
+- If language parameter is "english", return all 5 questions in professional English text.
+- Do not use any serial numbering digits (1., 2.), bullet signs, or asterisks (*) inside the strings.
+- Output must match this exact JSON scheme format:
 
 {
   "questions": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Question sentence string entry",
+    "Question sentence string entry",
+    "Question sentence string entry",
+    "Question sentence string entry",
+    "Question sentence string entry"
   ]
-}
-`,
-          },
-
-          {
-            role: "user",
-            content: `
-Issue Type: ${issueType}
-
-Issue:
-${issue}
-`,
-          },
-        ],
-      });
-
-    const content =
-      completion.choices[0].message.content || "{}";
-
-    return NextResponse.json(
-      JSON.parse(content)
-    );
-
-  } catch (error) {
-
-    console.log(error);
-
-    return NextResponse.json({
-      questions:
-        language === "hindi"
-          ? [
-              "कौन सा क्षेत्र प्रभावित है?",
-              "यह समस्या कब से है?",
-              "कितने लोग प्रभावित हैं?",
-              "क्या आपके पास कोई प्रमाण है?",
-              "क्या आपने पहले शिकायत की है?"
-            ]
-          : [
-              "Which area is affected?",
-              "Since when has the issue existed?",
-              "How many people are affected?",
-              "Do you have supporting evidence?",
-              "Have you reported it before?"
-            ],
+}`
+        },
+        {
+          role: "user",
+          content: `Target Language Layout Mode: ${language}\nIssue Category Portal: ${issueType}\nInitial Issue Text: ${issue}`
+        }
+      ],
+      temperature: 0.3
     });
 
-  }
+    let content = completion.choices[0].message.content || "{}";
+    content = content.replace(/```json/gi, "").replace(/```/g, "").trim();
 
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.questions) {
+        parsed.questions = parsed.questions.map((q: string) => q.replace(/[*#\-]/g, "").trim());
+      }
+      return NextResponse.json(parsed);
+    } catch {
+      throw new Error("JSON Token extraction fallback mapping executed.");
+    }
+
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({
+      questions: language === "hindi" ? [
+        "प्रभावित विशिष्ट क्षेत्र या कॉलोनी का नाम क्या है?",
+        "यह समस्या कितने दिनों या हफ्तों से बनी हुई है?",
+        "इस समस्या से अनुमानित रूप से कितने नागरिक प्रभावित हैं?",
+        "क्या आपके पास स्थिति को साबित करने के लिए तस्वीरें या सबूत हैं?",
+        "क्या इस संबंध में पहले भी कोई शिकायत दर्ज कराई गई है?"
+      ] : [
+        "What is the exact name of the affected locality or area?",
+        "For how many days or weeks has this issue been ongoing?",
+        "Approximately how many residents are being inconvenienced by this?",
+        "Do you have photographs or supporting evidence of the situation?",
+        "Has any prior complaint been submitted regarding this matter?"
+      ]
+    });
+  }
 }
