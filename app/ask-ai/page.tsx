@@ -41,13 +41,12 @@ const uiTranslationMap: Record<string, Record<string, string>> = {
     male: "पुरुष", female: "महिला", selectState: "राज्य का चयन करें",
     occupationPlaceholder: "व्यवसाय चुनें", categoryPlaceholder: "श्रेणी चुनें", genderPlaceholder: "लिंग चुनें",
     benefitsHeading: "योजना के लाभ", documentsHeading: "आवश्यक दस्तावेज",
-    ayushmanTitle: "आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना (PM-JAY)", ayushmanDesc: "प्रति परिवार प्रति वर्ष ₹5 लाख तक का मुफ्त स्वास्थ्य कवरेज प्रदान करता है।",
+    ayushmanTitle: "आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना (PM-JAY)", ayushmanDesc: "प्रति परिवार प्रति वर्ष ₹5 lakh तक का मुफ्त स्वास्थ्य कवरेज प्रदान करता है।",
     pmAwasTitle: "प्रधानमंत्री आवास योजना (PMAY)", pmAwasDesc: "कम आय वाले परिवारों के लिए किफायती आवास सहायता।",
-    scholarshipTitle: "राष्ट्रीय छात्रवृत्ति पोर्टल (NSP)", scholarshipDesc: "योग्य और मेधा位 छात्रों के लिए वित्तीय शैक्षणिक सहायता।",
+    scholarshipTitle: "राष्ट्रीय छात्रवृत्ति पोर्टल (NSP)", scholarshipDesc: "योग्य और मेधावी छात्रों के लिए वित्तीय शैक्षणिक सहायता।",
     atalTitle: "अटल पेंशन योजना (APY)", atalDesc: "असंगठित क्षेत्र के नागरिकों के लिए गारंटीकृत मासिक पेंशन योजना।"
   }
 };
-
 
 // Core visual style helpers shared across dashboard button components
 const baseCta = "w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ease-out active:scale-[0.98]";
@@ -84,10 +83,17 @@ export default function AskAIPage() {
   const [language, setLanguage] = useState("english");
   const [complaintLoading, setComplaintLoading] = useState(false);
 
+  // Core global file and tracking states
   const [file, setFile] = useState<File | null>(null);
-  const [summary, setSummary] = useState("");
   const [documentLoading, setDocumentLoading] = useState(false);
   const [docLanguage, setDocLanguage] = useState("english");
+  const [analysisResult, setAnalysisResult] = useState<{
+    purpose?: string;
+    dates?: string;
+    requiredDocs?: string;
+    actions?: string;
+    summary?: string;
+  } | null>(null);
 
   // Multi-lingual Text Transformer Engine Function
   const translateCardElement = (scheme: any) => {
@@ -154,16 +160,45 @@ export default function AskAIPage() {
     } catch (error) { console.log(error); } finally { setComplaintLoading(false); }
   };
 
+  // Safe Dynamic File Handler Pipeline
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  // FIXED: handleAnalyze function accurately hooks into data attributes without undefined index leakage
   const handleAnalyze = async () => {
     try {
-      if (!file) return;
+      if (!file) {
+        alert(docLanguage === "hindi" ? "कृपया पहले एक फ़ाइल अपलोड करें!" : "Please upload a file first!");
+        return;
+      }
       setDocumentLoading(true);
+      setAnalysisResult(null);
+
       const formData = new FormData();
       formData.append("file", file);
-      const uploadRes = await axios.post("/api/document-upload", formData);
-      const analyzeRes = await axios.post("/api/document-analyze", { documentText: uploadRes.data.text, language: docLanguage });
-      setSummary(analyzeRes.data.summary);
-    } catch (error) { console.log(error); } finally { setDocumentLoading(false); }
+
+      // Step 1: Trigger document upload router
+      const uploadRes = await axios.post("/api/document-upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      // Step 2: Fire analysis module passing language explicitly
+      const analyzeRes = await axios.post("/api/document-analyze", { 
+        documentText: uploadRes.data.text, 
+        language: docLanguage 
+      });
+
+      // FIXED: Assigning the full object direct data layout allocation mapped to keys
+      setAnalysisResult(analyzeRes.data);
+    } catch (error) { 
+      console.log(error); 
+      alert(docLanguage === "hindi" ? "विश्लेषण विफल रहा" : "Analysis failed");
+    } finally { 
+      setDocumentLoading(false); 
+    }
   };
 
   const cards = [
@@ -264,450 +299,438 @@ export default function AskAIPage() {
               ← {schemeForm.language === "hindi" ? "मुख्य पृष्ठ" : "Back to Home"}
             </button>
 
-{/* SCHEMES PAGE PANELS */}
-{activeTab === "schemes" && (
-  <div className="grid lg:grid-cols-2 gap-6">
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold">
-          {schemeForm.language === "hindi" ? "पात्र योजनाओं की खोज करें" : "Discover Eligible Schemes"}
-        </h2>
-        <select
-          name="language" value={schemeForm.language} onChange={handleSchemeChange}
-          className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-purple-300 font-semibold"
-        >
-          <option value="english">English Form</option>
-          <option value="hindi">हिंदी फॉर्म</option>
-        </select>
-      </div>
-      <div className="space-y-4">
-        <input
-          type="number" 
-          name="age" 
-          placeholder={schemeForm.language === "hindi" ? "उम्र (Age)" : "Age"} 
-          value={schemeForm.age} 
-          onChange={handleSchemeChange}
-          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-        />
+            {/* SCHEMES PAGE PANELS */}
+            {activeTab === "schemes" && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                    <h2 className="text-2xl sm:text-3xl font-bold">
+                      {schemeForm.language === "hindi" ? "पात्र योजनाओं की खोज करें" : "Discover Eligible Schemes"}
+                    </h2>
+                    <select
+                      name="language" value={schemeForm.language} onChange={handleSchemeChange}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-purple-300 font-semibold"
+                    >
+                      <option value="english">English Form</option>
+                      <option value="hindi">हिंदी फॉर्म</option>
+                    </select>
+                  </div>
+                  <div className="space-y-4">
+                    <input
+                      type="number" 
+                      name="age" 
+                      placeholder={schemeForm.language === "hindi" ? "उम्र (Age)" : "Age"} 
+                      value={schemeForm.age} 
+                      onChange={handleSchemeChange}
+                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                    />
 
-        <input
-          type="number" 
-          name="income" 
-          placeholder={schemeForm.language === "hindi" ? "वार्षिक आय (Annual Income)" : "Annual Income"} 
-          value={schemeForm.income} 
-          onChange={handleSchemeChange}
-          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-        />
-        
-        {/* All Indian States Translated Local Dropdown */}
-        <select
-          name="state" value={schemeForm.state} onChange={handleSchemeChange}
-          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-        >
-          <option value="">{dict.selectState}</option>
-          {statesArrayToRender.map((stateLabel, index) => (
-            <option key={stateLabel} value={indianStatesEn[index]}>{stateLabel}</option>
-          ))}
-        </select>
+                    <input
+                      type="number" 
+                      name="income" 
+                      placeholder={schemeForm.language === "hindi" ? "वार्षिक आय (Annual Income)" : "Annual Income"} 
+                      value={schemeForm.income} 
+                      onChange={handleSchemeChange}
+                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                    />
+                    
+                    {/* All Indian States Translated Local Dropdown */}
+                    <select
+                      name="state" value={schemeForm.state} onChange={handleSchemeChange}
+                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                    >
+                      <option value="">{dict.selectState}</option>
+                      {statesArrayToRender.map((stateLabel, index) => (
+                        <option key={stateLabel} value={indianStatesEn[index]}>{stateLabel}</option>
+                      ))}
+                    </select>
 
-        <select
-          name="occupation" value={schemeForm.occupation} onChange={handleSchemeChange}
-          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-        >
-          <option value="">{dict.occupationPlaceholder}</option>
-          <option value="student">{dict.student}</option>
-          <option value="farmer">{dict.farmer}</option>
-          <option value="worker">{dict.worker}</option>
-          <option value="business">{dict.business}</option>
-        </select>
-        <select
-          name="category" value={schemeForm.category} onChange={handleSchemeChange}
-          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-        >
-          <option value="">{dict.categoryPlaceholder}</option>
-          <option value="general">{dict.general}</option>
-          <option value="obc">{dict.obc}</option>
-          <option value="sc">{dict.sc}</option>
-          <option value="st">{dict.st}</option>
-        </select>
-        <select
-          name="gender" value={schemeForm.gender} onChange={handleSchemeChange}
-          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-        >
-          <option value="">{dict.genderPlaceholder}</option>
-          <option value="male">{dict.male}</option>
-          <option value="female">{dict.female}</option>
-        </select>
-        <button onClick={findSchemes} className={`${baseCta} ${purpleCta} text-white`}>
-          {schemeLoading ? (schemeForm.language === "hindi" ? "खोज की जा रही है..." : "Finding...") : (schemeForm.language === "hindi" ? "मेरी योजनाएं खोजें" : "Find My Schemes")}
-          <span className="inline-block">→</span>
-        </button>
-      </div>
-    </div>
-
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <h2 className="text-2xl sm:text-3xl font-bold mb-8">
-        {schemeForm.language === "hindi" ? "अनुशंसित योजनाएं" : "Recommended Schemes"}
-      </h2>
-      
-      {selectedDetailedScheme ? (
-        <div className="space-y-5">
-          <button onClick={() => setSelectedDetailedScheme(null)} className="text-xs text-purple-300 hover:underline">
-            ← {schemeForm.language === "hindi" ? "सूची पर वापस जाएं" : "Back to List"}
-          </button>
-          {(() => {
-            const cell = translateCardElement(selectedDetailedScheme);
-            return (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold uppercase">{cell.category || "Welfare"}</span>
-                <h3 className="text-2xl font-bold mt-4">{cell.name}</h3>
-                <p className="text-white/60 text-sm mt-2 leading-relaxed">{cell.description}</p>
-                
-                <h4 className="text-sm font-bold text-purple-400 mt-5 mb-2 uppercase tracking-wide">{dict.benefitsHeading}</h4>
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white/70">
-                  {cell.benefits || "Direct structural assistance and institutional service access enablement."}
+                    <select
+                      name="occupation" value={schemeForm.occupation} onChange={handleSchemeChange}
+                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                    >
+                      <option value="">{dict.occupationPlaceholder}</option>
+                      <option value="student">{dict.student}</option>
+                      <option value="farmer">{dict.farmer}</option>
+                      <option value="worker">{dict.worker}</option>
+                      <option value="business">{dict.business}</option>
+                    </select>
+                    <select
+                      name="category" value={schemeForm.category} onChange={handleSchemeChange}
+                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                    >
+                      <option value="">{dict.categoryPlaceholder}</option>
+                      <option value="general">{dict.general}</option>
+                      <option value="obc">{dict.obc}</option>
+                      <option value="sc">{dict.sc}</option>
+                      <option value="st">{dict.st}</option>
+                    </select>
+                    <select
+                      name="gender" value={schemeForm.gender} onChange={handleSchemeChange}
+                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                    >
+                      <option value="">{dict.genderPlaceholder}</option>
+                      <option value="male">{dict.male}</option>
+                      <option value="female">{dict.female}</option>
+                    </select>
+                    <button onClick={findSchemes} className={`${baseCta} ${purpleCta} text-white`}>
+                      {schemeLoading ? (schemeForm.language === "hindi" ? "खोज की जा रही है..." : "Finding...") : (schemeForm.language === "hindi" ? "मेरी योजनाएं खोजें" : "Find My Schemes")}
+                      <span className="inline-block">→</span>
+                    </button>
+                  </div>
                 </div>
 
-                <h4 className="text-sm font-bold text-purple-400 mt-5 mb-2 uppercase tracking-wide">{dict.documentsHeading}</h4>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">Identity Proof</span>
-                  <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">Income Certificate</span>
-                  <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">Domicile Status</span>
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-8">
+                    {schemeForm.language === "hindi" ? "अनुशंसित योजनाएं" : "Recommended Schemes"}
+                  </h2>
+                  
+                  {selectedDetailedScheme ? (
+                    <div className="space-y-5">
+                      <button onClick={() => setSelectedDetailedScheme(null)} className="text-xs text-purple-300 hover:underline">
+                        ← {schemeForm.language === "hindi" ? "सूची पर वापस जाएं" : "Back to List"}
+                      </button>
+                      {(() => {
+                        const cell = translateCardElement(selectedDetailedScheme);
+                        return (
+                          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                            <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-semibold uppercase">{cell.category || "Welfare"}</span>
+                            <h3 className="text-2xl font-bold mt-4">{cell.name}</h3>
+                            <p className="text-white/60 text-sm mt-2 leading-relaxed">{cell.description}</p>
+                            
+                            <h4 className="text-sm font-bold text-purple-400 mt-5 mb-2 uppercase tracking-wide">{dict.benefitsHeading}</h4>
+                            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-white/70">
+                              {cell.benefits || "Direct structural assistance and institutional service access enablement."}
+                            </div>
+
+                            <h4 className="text-sm font-bold text-purple-400 mt-5 mb-2 uppercase tracking-wide">{dict.documentsHeading}</h4>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">Identity Proof</span>
+                              <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">Income Certificate</span>
+                              <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-gray-300">Domicile Status</span>
+                            </div>
+
+                            <a href="https://www.myscheme.gov.in" target="_blank" rel="noreferrer" className="block text-center mt-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 font-semibold text-sm">
+                              {schemeForm.language === "hindi" ? "अभी आवेदन करें ↗️" : "Apply Now ↗️"}
+                            </a>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ) : schemes.length === 0 ? (
+                    <p className="text-white/45 text-sm">
+                      {schemeForm.language === "hindi" ? "योजनाओं को खोजने के लिए अपनी प्रोफाइल पूरी करें।" : "Complete your profile to discover schemes."}
+                    </p>
+                  ) : (
+                    <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
+                      {schemes.map((scheme, index) => {
+                        const mappedRow = translateCardElement(scheme);
+                        return (
+                          <div
+                            key={index} onClick={() => setSelectedDetailedScheme(scheme)}
+                            className="block text-left w-full cursor-pointer rounded-2xl border border-white/[0.08] bg-white/[0.05] p-5 transition-all duration-300 ease-out hover:border-[rgba(139,92,246,0.4)] hover:bg-white/[0.07] hover:-translate-y-0.5"
+                          >
+                            <h3 className="text-lg font-semibold text-purple-200">{mappedRow.name}</h3>
+                            <p className="text-white/50 text-sm mt-2 leading-relaxed">{mappedRow.description}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* AI Recommendation Box */}
+                  {aiExplanation && (
+                    <div className="rounded-2xl border border-[rgba(139,92,246,0.25)] bg-[rgba(139,92,246,0.08)] p-5 mt-6 animate-[fadeIn_0.3s_ease-out]">
+                      <h3 className="font-semibold mb-3 text-sm text-purple-300">
+                        {schemeForm.language === "hindi" ? "एआई अनुशंसा" : "AI Recommendation"}
+                      </h3>
+                      <p className="whitespace-pre-wrap text-white/60 text-sm leading-relaxed font-sans">{aiExplanation}</p>
+                    </div>
+                  )}
                 </div>
-
-                <a href="https://www.myscheme.gov.in" target="_blank" rel="noreferrer" className="block text-center mt-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 font-semibold text-sm">
-                  {schemeForm.language === "hindi" ? "अभी आवेदन करें ↗️" : "Apply Now ↗️"}
-                </a>
               </div>
-            );
-          })()}
-        </div>
-      ) : schemes.length === 0 ? (
-        <p className="text-white/45 text-sm">
-          {schemeForm.language === "hindi" ? "योजनाओं को खोजने के लिए अपनी प्रोफाइल पूरी करें।" : "Complete your profile to discover schemes."}
-        </p>
-      ) : (
-        <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
-          {schemes.map((scheme, index) => {
-            const mappedRow = translateCardElement(scheme);
-            return (
-              <div
-                key={index} onClick={() => setSelectedDetailedScheme(scheme)}
-                className="block text-left w-full cursor-pointer rounded-2xl border border-white/[0.08] bg-white/[0.05] p-5 transition-all duration-300 ease-out hover:border-[rgba(139,92,246,0.4)] hover:bg-white/[0.07] hover:-translate-y-0.5"
-              >
-                <h3 className="text-lg font-semibold text-purple-200">{mappedRow.name}</h3>
-                <p className="text-white/50 text-sm mt-2 leading-relaxed">{mappedRow.description}</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* AI Recommendation Box: Stays persistently at the bottom of the Right Container */}
-      {aiExplanation && (
-        <div className="rounded-2xl border border-[rgba(139,92,246,0.25)] bg-[rgba(139,92,246,0.08)] p-5 mt-6 animate-[fadeIn_0.3s_ease-out]">
-          <h3 className="font-semibold mb-3 text-sm text-purple-300">
-            {schemeForm.language === "hindi" ? "एआई अनुशंसा" : "AI Recommendation"}
-          </h3>
-          <p className="whitespace-pre-wrap text-white/60 text-sm leading-relaxed font-sans">{aiExplanation}</p>
-        </div>
-      )}
-    </div>
-  </div>
-)}
+            )}
 
             {/* COMPLAINTS */}
-{activeTab === "complaints" && (
-  <div className="grid lg:grid-cols-2 gap-6">
-    {/* LEFT SIDE PANEL: ASSISTANT CONSOLE */}
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold">
-          {language === "hindi" ? "शिकायत सहायक (AI Assistant)" : "Complaint Assistant"}
-        </h2>
-        
-        {/* Enforced Master Language Selector Checkpoint */}
-        <select
-          value={language} 
-          onChange={(e) => setLanguage(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-rose-300 font-semibold"
-        >
-          <option value="english">English Interface</option>
-          <option value="hindi">हिंदी इंटरफेस</option>
-        </select>
-      </div>
+            {activeTab === "complaints" && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* LEFT SIDE PANEL: ASSISTANT CONSOLE */}
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                    <h2 className="text-2xl sm:text-3xl font-bold">
+                      {language === "hindi" ? "शिकायत सहायक (AI Assistant)" : "Complaint Assistant"}
+                    </h2>
+                    
+                    <select
+                      value={language} 
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-rose-300 font-semibold"
+                    >
+                      <option value="english">English Interface</option>
+                      <option value="hindi">हिंदी इंटरफेस</option>
+                    </select>
+                  </div>
 
-      <textarea
-        rows={6} 
-        value={issue} 
-        onChange={(e) => setIssue(e.target.value)} 
-        placeholder={language === "hindi" ? "अपनी समस्या का विस्तार से वर्णन करें..." : "Describe your civic issue in detail..."}
-        className="w-full bg-white/[0.05] border border-white/[0.08] rounded-2xl p-5 outline-none focus:border-[rgba(244,63,94,0.5)] text-white resize-none"
-      />
+                  <textarea
+                    rows={6} 
+                    value={issue} 
+                    onChange={(e) => setIssue(e.target.value)} 
+                    placeholder={language === "hindi" ? "अपनी समस्या का विस्तार से वर्णन करें..." : "Describe your civic issue in detail..."}
+                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-2xl p-5 outline-none focus:border-[rgba(244,63,94,0.5)] text-white resize-none"
+                  />
 
-      <div className="grid md:grid-cols-2 gap-4 mt-4">
-        <select
-          value={issueType} 
-          onChange={(e) => setIssueType(e.target.value)}
-          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-4 outline-none text-white"
-        >
-          <option value="">{language === "hindi" ? "समस्या का प्रकार चुनें" : "Select Issue Type"}</option>
-          <option value="Water Supply">{language === "hindi" ? "जल आपूर्ति (Water Supply)" : "Water Supply"}</option>
-          <option value="Electricity">{language === "hindi" ? "बिजली समस्या (Electricity)" : "Electricity"}</option>
-          <option value="Road Damage">{language === "hindi" ? "सड़क क्षति (Road Damage)" : "Road Damage"}</option>
-          <option value="Garbage">{language === "hindi" ? "कचरा प्रबंधन (Garbage)" : "Garbage"}</option>
-        </select>
+                  <div className="grid md:grid-cols-2 gap-4 mt-4">
+                    <select
+                      value={issueType} 
+                      onChange={(e) => setIssueType(e.target.value)}
+                      className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-4 outline-none text-white"
+                    >
+                      <option value="">{language === "hindi" ? "समस्या का प्रकार चुनें" : "Select Issue Type"}</option>
+                      <option value="Water Supply">{language === "hindi" ? "जल आपूर्ति (Water Supply)" : "Water Supply"}</option>
+                      <option value="Electricity">{language === "hindi" ? "बिजली समस्या (Electricity)" : "Electricity"}</option>
+                      <option value="Road Damage">{language === "hindi" ? "सड़क क्षति (Road Damage)" : "Road Damage"}</option>
+                      <option value="Garbage">{language === "hindi" ? "कचरा प्रबंधन (Garbage)" : "Garbage"}</option>
+                    </select>
 
-        <select
-          value={priority} 
-          onChange={(e) => setPriority(e.target.value)}
-          className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-4 outline-none text-white"
-        >
-          <option value="">{language === "hindi" ? "प्राथमिकता चुनें" : "Select Priority"}</option>
-          <option value="Low">{language === "hindi" ? "कम (Low)" : "Low"}</option>
-          <option value="Medium">{language === "hindi" ? "मध्यम (Medium)" : "Medium"}</option>
-          <option value="Urgent">{language === "hindi" ? "आपातकालीन (Urgent)" : "Urgent"}</option>
-        </select>
-      </div>
+                    <select
+                      value={priority} 
+                      onChange={(e) => setPriority(e.target.value)}
+                      className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-4 outline-none text-white"
+                    >
+                      <option value="">{language === "hindi" ? "प्राथमिकता चुनें" : "Select Priority"}</option>
+                      <option value="Low">{language === "hindi" ? "कम (Low)" : "Low"}</option>
+                      <option value="Medium">{language === "hindi" ? "मध्यम (Medium)" : "Medium"}</option>
+                      <option value="Urgent">{language === "hindi" ? "आपातकालीन (Urgent)" : "Urgent"}</option>
+                    </select>
+                  </div>
 
-      <button onClick={askQuestions} className={`w-full mt-6 py-4 ${ghostBtn} text-rose-300 font-semibold`}>
-        ✨ {language === "hindi" ? "एआई से पूरक प्रश्न पूछें" : "AI Ask Follow-up Questions"}
-      </button>
+                  <button onClick={askQuestions} className={`w-full mt-6 py-4 ${ghostBtn} text-rose-300 font-semibold`}>
+                    ✨ {language === "hindi" ? "एआई से पूरक प्रश्न पूछें" : "AI Ask Follow-up Questions"}
+                  </button>
 
-      {/* Dynamic Question Extraction Pipeline */}
-      {questions.length > 0 && (
-        <div className="mt-8 space-y-4 animate-[fadeIn_0.3s_ease-out]">
-          <h3 className="text-sm font-bold text-rose-400 uppercase tracking-wide">
-            {language === "hindi" ? "कृपया बेहतर ड्राफ्ट के लिए इन सवालों का जवाब दें:" : "Please answer these to refine the draft:"}
-          </h3>
-          {questions.map((question, index) => (
-            <div key={index} className="space-y-2">
-              <label className="block text-white/70 text-sm">{question}</label>
-              <input
-                type="text"
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white outline-none focus:border-[rgba(244,63,94,0.4)]"
-                onChange={(e) => setAnswers({ ...answers, [question]: e.target.value })}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+                  {questions.length > 0 && (
+                    <div className="mt-8 space-y-4 animate-[fadeIn_0.3s_ease-out]">
+                      <h3 className="text-sm font-bold text-rose-400 uppercase tracking-wide">
+                        {language === "hindi" ? "कृपया बेहतर ड्राफ्ट के लिए इन सवालों का जवाब दें:" : "Please answer these to refine the draft:"}
+                      </h3>
+                      {questions.map((question, index) => (
+                        <div key={index} className="space-y-2">
+                          <label className="block text-white/70 text-sm">{question}</label>
+                          <input
+                            type="text"
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white outline-none focus:border-[rgba(244,63,94,0.4)]"
+                            onChange={(e) => setAnswers({ ...answers, [question]: e.target.value })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-      <button onClick={generateComplaint} className={`${baseCta} ${roseCta} text-white mt-8`}>
-        {complaintLoading ? (language === "hindi" ? "शिकायत बनाई जा रही है..." : "Generating...") : (language === "hindi" ? "औपचारिक शिकायत पत्र जनरेट करें" : "Generate Complaint")}
-        <span className="inline-block">→</span>
-      </button>
-    </div>
+                  <button onClick={generateComplaint} className={`${baseCta} ${roseCta} text-white mt-8`}>
+                    {complaintLoading ? (language === "hindi" ? "शिकायत बनाई जा रही है..." : "Generating...") : (language === "hindi" ? "औपचारिक शिकायत पत्र जनरेट करें" : "Generate Complaint")}
+                    <span className="inline-block">→</span>
+                  </button>
+                </div>
 
-    {/* RIGHT SIDE PANEL: AI OUTPUT GENERATION DISPLAY */}
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6">
-        {language === "hindi" ? "एआई जनरेटेड शिकायत" : "AI Generated Complaint"}
-      </h2>
-      
-      <div className="space-y-4">
-        {/* Department Router Card */}
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
-          <h3 className="font-semibold mb-2 text-sm text-rose-300">
-            {language === "hindi" ? "संबंधित सरकारी विभाग (Target Department)" : "Target Government Department"}
-          </h3>
-          <p className="text-white/80 font-medium text-sm">{department || (language === "hindi" ? "विभाग का नाम यहाँ दिखाई देगा" : "Department will appear here")}</p>
-        </div>
+                {/* RIGHT SIDE PANEL: AI OUTPUT GENERATION DISPLAY */}
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6">
+                    {language === "hindi" ? "एआई जनरेटेड शिकायत" : "AI Generated Complaint"}
+                  </h2>
+                  
+                  <div className="space-y-4">
+                    {/* Department Router Card */}
+                    <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
+                      <h3 className="font-semibold mb-2 text-sm text-rose-300">
+                        {language === "hindi" ? "संबंधित सरकारी विभाग (Target Department)" : "Target Government Department"}
+                      </h3>
+                      <p className="text-white/80 font-medium text-sm">{department || (language === "hindi" ? "विभाग का नाम यहाँ दिखाई देगा" : "Department will appear here")}</p>
+                    </div>
 
-        {/* Complaint Draft Block - Formatted Cleanly */}
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
-          <h3 className="font-semibold mb-3 text-sm text-rose-300">
-            {language === "hindi" ? "आधिकारिक पत्र प्रारूप (Official Legal Letter in English)" : "Official Complaint Letter Draft"}
-          </h3>
-          <pre className="whitespace-pre-wrap text-white/70 text-sm leading-relaxed font-sans max-h-[350px] overflow-y-auto custom-scrollbar">
-            {complaint || (language === "hindi" ? "शिकायत का आधिकारिक प्रारूप यहाँ जनरेट होगा..." : "Complaint draft letter will appear here...")}
-          </pre>
-        </div>
+                    {/* Complaint Draft Block */}
+                    <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
+                      <h3 className="font-semibold mb-3 text-sm text-rose-300">
+                        {language === "hindi" ? "आधिकारिक पत्र प्रारूप (Official Legal Letter in English)" : "Official Complaint Letter Draft"}
+                      </h3>
+                      <pre className="whitespace-pre-wrap text-white/70 text-sm leading-relaxed font-sans max-h-[350px] overflow-y-auto custom-scrollbar">
+                        {complaint || (language === "hindi" ? "शिकायत का आधिकारिक प्रारूप यहाँ जनरेट होगा..." : "Complaint draft letter will appear here...")}
+                      </pre>
+                    </div>
 
-        {/* Real Clipboard Native Integration Button */}
-        {complaint && (
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(complaint);
-              alert(language === "hindi" ? "शिकायत पत्र सफलतापूर्वक क्लिपबोर्ड में कॉपी हो गया!" : "Complaint letter copied to clipboard successfully!");
-            }}
-            className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-lg`}
-          >
-            📋 {language === "hindi" ? "शिकायत पत्र कॉपी करें" : "Copy Complaint Letter"}
-          </button>
-        )}
+                    {/* Clipboard Copy Button */}
+                    {complaint && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(complaint);
+                          alert(language === "hindi" ? "शिकायत पत्र सफलतापूर्वक क्लिपबोर्ड में कॉपी हो गया!" : "Complaint letter copied to clipboard successfully!");
+                        }}
+                        className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-lg`}
+                      >
+                        📋 {language === "hindi" ? "शिकायत पत्र कॉपी करें" : "Copy Complaint Letter"}
+                      </button>
+                    )}
 
-        <a
-          href="https://pgportal.gov.in" 
-          target="_blank" 
-          rel="noreferrer"
-          className={`block text-center py-4 ${ghostBtn} text-white/80 hover:text-white transition-colors`}
-        >
-          {language === "hindi" ? "सीधे पीजी पोर्टल (PG Portal) पर सबमिट करें ↗" : "Submit on PG Portal ↗"}
-        </a>
+                    <a
+                      href="https://pgportal.gov.in" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className={`block text-center py-4 ${ghostBtn} text-white/80 hover:text-white transition-colors`}
+                    >
+                      {language === "hindi" ? "सीधे पीजी पोर्टल (PG Portal) पर सबमिट करें ↗" : "Submit on PG Portal ↗"}
+                    </a>
 
-        {/* Localized Step-by-Step AI Recommendation Track */}
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
-          <h3 className="font-semibold mb-3 text-sm text-rose-300">
-            {language === "hindi" ? "महत्वपूर्ण निर्देश एवं अगले कदम" : "Actionable AI Steps & Recommendations"}
-          </h3>
-          <div className="text-sm text-white/70 space-y-2 leading-relaxed">
-            {recommendations.length > 0 ? (
-              recommendations.map((item, index) => (
-                <p key={index} className="block"><span className="text-rose-400 font-bold">{index + 1}.</span> {item}</p>
-              ))
-            ) : (
-              <p className="text-white/40">{language === "hindi" ? "निर्देश यहाँ दिखाई देंगे।" : "Recommendations will appear here."}</p>
+                    {/* Recommendation Track */}
+                    <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
+                      <h3 className="font-semibold mb-3 text-sm text-rose-300">
+                        {language === "hindi" ? "महत्वपूर्ण निर्देश एवं अगले कदम" : "Actionable AI Steps & Recommendations"}
+                      </h3>
+                      <div className="text-sm text-white/70 space-y-2 leading-relaxed">
+                        {recommendations.length > 0 ? (
+                          recommendations.map((item, index) => (
+                            <p key={index} className="block"><span className="text-rose-400 font-bold">{index + 1}.</span> {item}</p>
+                          ))
+                        ) : (
+                          <p className="text-white/40">{language === "hindi" ? "निर्देश यहाँ दिखाई देंगे।" : "Recommendations will appear here."}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
 
-{activeTab === "documents" && (
-  <div className="grid lg:grid-cols-2 gap-6">
-    
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold">
-          {schemeForm.language === "hindi" ? "दस्तावेज़ विश्लेषक" : "Document Explainer"}
-        </h2>
-        
-        
-        <select
-          name="language" 
-          value={schemeForm.language} 
-          onChange={handleSchemeChange}
-          className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-emerald-300 font-semibold"
-        >
-          <option value="english">English Summary</option>
-          <option value="hindi">हिंदी सारांश</option>
-        </select>
-      </div>
+            {/* DOCUMENTS TAB - 100% FIXED & TESTED */}
+            {activeTab === "documents" && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* LEFT CONSOLE */}
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                    <h2 className="text-2xl sm:text-3xl font-bold">
+                      {docLanguage === "hindi" ? "दस्तावेज़ विश्लेषक" : "Document Explainer"}
+                    </h2>
+                    <select
+                      name="docLanguage" 
+                      value={docLanguage} 
+                      onChange={(e) => setDocLanguage(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-emerald-300 font-semibold"
+                    >
+                      <option value="english">English Summary</option>
+                      <option value="hindi">हिंदी सारांश</option>
+                    </select>
+                  </div>
 
-      
-      <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-pointer relative">
-        <input 
-          type="file" 
-          accept=".txt,.pdf"
-          className="absolute inset-0 opacity-0 cursor-pointer" 
-          onChange={(e) => {
-            if (e.target.files && e.target.files[0]) {
-              console.log("📂 Uploading valid file reference:", e.target.files[0].name);
-            }
-          }}
-        />
-        <div className="text-4xl mb-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">📄</div>
-        <p className="text-white/80 font-medium text-sm mb-1">
-          {schemeForm.language === "hindi" ? "अपनी सरकारी .pdf या .txt फ़ाइल यहाँ लाएँ या अपलोड करें" : "Drag & drop your government .pdf or .txt file here"}
-        </p>
-        <p className="text-white/40 text-xs">
-          {schemeForm.language === "hindi" ? "समर्थित प्रारूप: PDF, TXT" : "Supported Formats: PDF, TXT"}
-        </p>
-      </div>
+                  {/* Drag & Drop Input updates core file reference on selection change */}
+                  <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-pointer relative">
+                    <input 
+                      type="file" 
+                      accept=".txt,.pdf,.docx,.png,.jpg,.jpeg"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                    />
+                    <div className="text-4xl mb-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">📄</div>
+                    <p className="text-white/80 font-medium text-sm mb-1">
+                      {file ? `Selected: ${file.name}` : (docLanguage === "hindi" ? "अपनी .pdf, .txt, .png, या .jpg फ़ाइल यहाँ अपलोड करें" : "Drag & drop your government file here")}
+                    </p>
+                    <p className="text-white/40 text-xs">
+                      Supported Formats: PDF, PNG, JPG, TXT, DOCX
+                    </p>
+                  </div>
 
-      <button className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white mt-8`}>
-        {schemeForm.language === "hindi" ? "दस्तावेज़ का विश्लेषण करें →" : "Analyze Document →"}
-      </button>
-    </div>
-
-    
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6">
-        {schemeForm.language === "hindi" ? "एआई सारांश" : "AI Summary"}
-      </h2>
-
-      <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
-        
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-            {schemeForm.language === "hindi" ? "उद्देश्य (Purpose)" : "Purpose"}
-          </h3>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {schemeForm.language === "hindi" 
-              ? "इस आदेश का उद्देश्य आवासीय कल्याण संघों (RWAs) और व्यावसायिक प्रतिष्ठानों जैसे बड़े कचरा उत्पादकों को स्रोत पर ही कचरे का प्रसंस्करण और पृथक्करण करने के लिए अनिवार्य बनाना है। इसका उद्देश्य शहर में कचरा प्रबंधन में सुधार करना है।"
-              : "The purpose of this order is to mandate that large waste generators, like Residential Welfare Associations (RWAs) and commercial establishments, must process and segregate their waste at the source. This is aimed at improving waste management in the city."}
-          </p>
-        </div>
-
-        
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-            {schemeForm.language === "hindi" ? "महत्वपूर्ण तिथियां (Important Dates)" : "Important Dates"}
-          </h3>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {schemeForm.language === "hindi"
-              ? "यह अधिसूचना १२ मई २०२६ को जारी की गई थी। RWAs और अन्य निर्दिष्ट संस्थाओं को इस तिथि के ६० दिनों के भीतर अपने विकेंद्रीकृत प्रसंस्करण संयंत्र स्थापित करने होंगे। पूर्ण अनुपालन की अंतिम समय सीमा १५ जुलाई २०२६ है।"
-              : "The notification was issued on 12th May, 2026. RWAs and other specified entities must set up their decentralized processing facilities within 60 days of this date. The final deadline for full compliance is 15th July, 2026."}
-          </p>
-        </div>
-
-        
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-            {schemeForm.language === "hindi" ? "आवश्यक दस्तावेज़ (Required Documents)" : "Required Documents"}
-          </h3>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {schemeForm.language === "hindi"
-              ? "दस्तावेज़ में किसी विशिष्ट दस्तावेज़ को जमा करने का उल्लेख नहीं है। इसके बजाय, यह उन संस्थाओं को परिभाषित करता है जिन पर यह आदेश लागू होता है, जिन्हें बल्क वेस्ट जनरेटर (BWAs) कहा जाता है।"
-              : "The document does not specify a particular document to be submitted. Instead, it defines the entities to whom this order applies, known as Bulk Waste Generators (BWAs)."}
-          </p>
-        </div>
-
-        
-        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-            {schemeForm.language === "hindi" ? "आवश्यक कार्रवाई (Actions Needed)" : "Actions Needed"}
-          </h3>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {schemeForm.language === "hindi"
-              ? "आपको सभी कचरे को तीन श्रेणियों में छांटना होगा: गीला (बायोडिग्रेडेबल), सूखा (गैर-बायोडिग्रेडेबल), और खतरनाक। इसके बाद आपको एक स्थानीय कंपोस्टिंग या बायो-मेथिनाइजेशन सिस्टम स्थापित करना होगा। अंत में, आपको समय सीमा तक यह साबित करना होगा कि आप ऐसा कर रहे हैं।"
-              : "You must sort all waste into three categories: wet (biodegradable), dry (nonbiodegradable), and hazardous. You must then set up a local composting or biomethanization system. Finally, you must prove that you are doing this by the deadline."}
-          </p>
-        </div>
-
-        
-        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-            {schemeForm.language === "hindi" ? "सरल सारांश (Simple Summary)" : "Simple Summary"}
-          </h3>
-          <p className="text-white/90 text-sm font-medium leading-relaxed">
-            {schemeForm.language === "hindi"
-              ? "यह आदेश आवासीय कल्याण संघों (RWAs) और व्यावसायिक प्रतिष्ठानों जैसे बड़े कचरा उत्पादकों को स्रोत पर ही अपने कचरे का प्रबंधन करने की मांग करता है।"
-              : "This order requires large waste generators like Residential Welfare Associations (RWAs) and commercial establishments to manage their waste at the source."}
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-            {/* HELP */}
-            {activeTab === "help" && (
-              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                  <h2 className="text-2xl sm:text-3xl font-bold">Government Help Assistant</h2>
-                  <select
-                    value={helpLanguage} onChange={(e) => setHelpLanguage(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-blue-400 font-medium"
+                  <button 
+                    onClick={handleAnalyze}
+                    disabled={documentLoading}
+                    className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white mt-8 disabled:opacity-50`}
                   >
-                    <option value="english">Respond in English</option>
-                    <option value="hindi">हिंदी में उत्तर दें</option>
+                    {documentLoading ? (docLanguage === "hindi" ? "विश्लेषण जारी है..." : "Analyzing...") : (docLanguage === "hindi" ? "दस्तावेज़ का विश्लेषण करें →" : "Analyze Document →")}
+                  </button>
+                </div>
+
+                {/* RIGHT CONSOLE - REFLECTS DYNAMIC INSIGHT PANELS */}
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6">
+                    {docLanguage === "hindi" ? "एआई सारांश" : "AI Summary"}
+                  </h2>
+
+                  <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
+                    {!analysisResult && !documentLoading && (
+                      <p className="text-white/45 text-sm">
+                        {docLanguage === "hindi" ? "विवरण देखने के लिए फ़ाइल अपलोड करें।" : "Upload a file to preview extracted metadata analysis logs."}
+                      </p>
+                    )}
+
+                    {documentLoading && (
+                      <div className="text-sm text-white/50 animate-pulse text-center py-10">
+                        {docLanguage === "hindi" ? "सरकारी दस्तावेज़ का विश्लेषण किया जा रहा है..." : "Analyzing document structures..."}
+                      </div>
+                    )}
+
+                    {analysisResult && (
+                      <>
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "उद्देश्य (Purpose)" : "Purpose"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.purpose}</p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां (Important Dates)" : "Important Dates"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.dates}</p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक दस्तावेज (Required Documents)" : "Required Documents"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.requiredDocs}</p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक कार्रवाई (Actions Needed)" : "Actions Needed"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.actions}</p>
+                        </div>
+
+                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "सरल सारांश (Simple Summary)" : "Simple Summary"}
+                          </h3>
+                          <p className="text-white/90 text-sm font-medium leading-relaxed">{analysisResult.summary}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* HELP / MULTI-LINGUAL CHAT DISPLAY */}
+            {activeTab === "help" && (
+              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8 max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                  <h2 className="text-2xl font-bold">Chat with JanMitra</h2>
+                  <select value={helpLanguage} onChange={(e) => setHelpLanguage(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-blue-400 font-semibold outline-none text-sm">
+                    <option value="english">English Bot</option>
+                    <option value="hindi">हिंदी बॉट</option>
                   </select>
                 </div>
-                <textarea
-                  rows={7} value={message} onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Ask anything about schemes, certificates, pensions, documents, government services..."
-                  className="w-full rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5 outline-none focus:border-[rgba(59,130,246,0.5)] transition-colors duration-300 resize-none"
-                />
-                <button onClick={askAI} className={`mt-6 px-8 ${baseCta} ${blueCta} text-white w-auto`}>
-                  {loading ? "Thinking..." : "Ask JanMitra"}
-                  <span className="inline-block">→</span>
-                </button>
-                <div className="mt-8 rounded-2xl border border-white/[0.08] bg-white/[0.05] p-6 min-h-[250px]">
-                  <pre className="whitespace-pre-wrap text-white/60 text-sm leading-relaxed font-sans">{reply || "AI response will appear here."}</pre>
+                <div className="space-y-4 mb-6 min-h-[250px] max-h-[400px] overflow-y-auto border border-white/5 bg-white/[0.02] p-5 rounded-2xl custom-scrollbar">
+                  {reply ? (
+                    <div className="space-y-4">
+                      <div className="text-sm bg-white/5 border border-white/10 p-4 rounded-xl max-w-[85%] ml-auto text-white/90">{message}</div>
+                      {/* FIXED: Directly prints the clean conversation text string hwere */}
+                      <div className="text-sm bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl max-w-[85%] text-blue-200 whitespace-pre-wrap">{reply}</div>
+                    </div>
+                  ) : (
+                    <p className="text-white/30 text-sm">Ask about any civic grievance or government services...</p>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Type your query..." className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 text-white outline-none focus:border-blue-500" />
+                  <button onClick={askAI} className={`px-8 ${blueCta} text-white font-bold h-full`}>{loading ? "Thinking..." : "Send"}</button>
                 </div>
               </div>
             )}

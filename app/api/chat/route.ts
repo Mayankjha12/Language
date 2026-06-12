@@ -7,63 +7,52 @@ const openai = new OpenAI({
 });
 
 export async function POST(req: Request) {
-  let message = "";
-  let language = "en-US";
-
   try {
     const body = await req.json();
-    message = body.message || "";
-    language = body.language || "en-US";
+    const message = body.message || "";
 
-    console.log("📥 Chat Request received with payload:", { message, language });
+    console.log("📥 Chat Request received with message:", message);
 
-    if (!message || !language) {
+    if (!message) {
       return NextResponse.json(
-        { intent: "general", reply: "Please provide both message and language parameters." },
+        { intent: "general", reply: "Please provide a valid message." },
         { status: 400 }
       );
     }
 
-    // Advanced Localized Multi-Intent Instruction Prompt Engineering Matrix
-    const masterSystemPrompt = `You are Maya, the expert, highly empathetic, and natural conversational multilingual voice assistant for the JanMitra Indian Government Services Platform.
+    // 🚀 STRICT 22 LANGUAGES AUTO-DETECTION SYSTEM PROMPT
+    const masterSystemPrompt = `You are Maya, an expert conversational multilingual assistant for the JanMitra Indian Government Services Platform.
 
-YOUR MANDATORY VOCAL LIFE-CYCLE DIRECTIVES:
-1. Speak exactly like a warm, supportive, polite, and highly professional human agent. Never give robotic, structured, or dry analytical responses.
-2. SCRIPT COMPLIANCE LOCK: You MUST respond strictly using the authentic native script characters of the target language requested.
-   - If target language is 'hi-IN', write ONLY in pure Devnagari script characters (e.g., "जी बिल्कुल, मैं आपको बताती हूँ..."). Absolute zero Roman characters or Hinglish translucent expressions are allowed.
-   - If target language is 'en-US', write ONLY in clean, corporate English text.
-   - For any other selected regional language parameter (like bn-IN, ta-IN, te-IN, mr-IN, etc.), apply this exact same strict rule: use ONLY that specific language's official native character alphabet.
-3. Keep answers exceptionally short, warm, and focused (maximum 1 to 2 sentences). Long analytical paragraphs cause the Text-to-Speech playback loop to glitch.
+YOUR MANDATORY MASTER DIRECTIVES:
+1. AUTO-LANGUAGE DETECTION: Dynamically analyze the user's input text to instantly detect which of the 22 official Indian languages or scripts they are using (Hindi, Bengali, Tamil, Telugu, Marathi, Punjabi, etc.).
+2. SCRIPT RECONSTRUCTION LAW:
+   - If the user writes in Hindi or uses Romanized/Hinglish script (e.g., "mujhe scholarship chahiye", "mera ration card pending hai"), you MUST respond entirely in native pure HINDI script (Devnagari Script - e.g., "जी बिल्कुल, मैं आपकी सहायता कर सकती हूँ...").
+   - If the user writes in English, respond in clean English.
+   - For all other regional Indian languages, detect it and respond strictly using that specific language's official authentic script characters.
+3. CONVERSATIONAL STYLE & VOICE AI COMPLIANCE: Speak naturally like a warm human agent. Keep responses exceptionally short, crisp, and fluid (strictly 1 to 2 sentences max). No markdown formats, no asterisks, no hashes, no bullet points.
 
-DYNAMIC PLATFORM INTENT MAPPING PORTALS:
-Evaluate the user input context and categorize it into exactly one of these 4 tracking tokens:
-- "schemes": Questions about scholarships, pensions, PM Kisan, subsidies, eligibility, or welfare grants.
-- "complaints": Civic tracking, electricity cuts, water leakages, waste management, or public grievances.
-- "documents": Identity certificates, forms processing, passports, registration requirements, or document explanations.
-- "general": Basic greetings, small talk, pleasantries, or questions unrelated to specific civic platform actions.
+DYNAMIC INTENT MAPPING:
+Categorize the user request into exactly one of these tokens: "schemes", "complaints", "documents", or "general".
 
-Current Target User Language Mode Parameter: ${language}
+STRICT RAW JSON INTERFACE STRUCTURE:
+Output ONLY a valid, tightly compiled JSON object. Do not wrap inside markdown code indicators (\`\`\`json), do not include trailing commentaries. Follow this layout exactly:
+{"intent": "schemes" | "complaints" | "documents" | "general", "reply": "Your localized, script-accurate conversational response string goes here"}`;
 
-STRICT OUTPUT COMPLIANCE FORMAT:
-Return ONLY a valid, single unquoted JSON object structure matching the format layout directly below. Do not wrap inside markdown code indicators, do not include trailing explanations, commentaries, or structural prefixes.
-
-{"intent": "schemes" | "complaints" | "documents" | "general", "reply": "Your completely localized, script-accurate conversational response sentence goes here"}`;
-
-    console.log("🤖 Calling Sarvam AI Core Engine Array with strict compliance configuration...");
+    console.log("🤖 Querying Sarvam Core Engine array...");
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: masterSystemPrompt },
-        { role: "user", content: message }
+        { role: "user", content: `User Text Stream: ${message}` }
       ],
-      temperature: 0.0, // Strict lock to maximize parsing predictability and block character bleeding
-      max_tokens: 350,
+      temperature: 0.1,
+      max_tokens: 250,
     });
 
-    let content = completion.choices[0].message.content?.trim() || "";
+    let content = completion.choices[0].message.content?.trim() || "{}";
     
-    // Direct string manipulation cleanup to eliminate accidental markdown enclosures instantly
+    // Immediate sanitization of unwanted code blocks
     content = content.replace(/```json/gi, "").replace(/```/g, "").trim();
 
     let parsed: any = { intent: "general", reply: content };
@@ -73,34 +62,28 @@ Return ONLY a valid, single unquoted JSON object structure matching the format l
         const startIdx = content.indexOf("{");
         const endIdx = content.lastIndexOf("}") + 1;
         parsed = JSON.parse(content.substring(startIdx, endIdx));
-        console.log("✨ Response JSON successfully verified and parsed:", parsed);
       } catch (e) {
-        console.warn("Manual fallback parsing sequence executed:", e);
+        console.warn("⚠️ JSON Parse bypass, manual mapping required:", e);
       }
     }
 
-    // Secure fallback statements if structural keys are missing
-    if (!parsed.reply || parsed.reply.trim() === "") {
-      parsed.reply = language === "hi-IN" 
-        ? "जी, मैं आपकी सहायता के लिए तैयार हूँ। कृपया अपना प्रश्न पूछें।" 
-        : "Yes, I am here to assist you. Please ask your question.";
+    // Strip any lingering formatting tokens (*, #) that ruin screen/voice outputs
+    if (parsed.reply && typeof parsed.reply === "string") {
+      parsed.reply = parsed.reply.replace(/[*#\-–•]/g, "").trim();
     }
 
-    if (!parsed.intent) {
-      parsed.intent = "general";
+    // Dynamic fallback structure
+    if (!parsed.reply || parsed.reply.trim() === "") {
+      parsed.reply = "जी, मैं आपकी सहायता के लिए तैयार हूँ। कृपया अपना प्रश्न पूछें।";
     }
+    if (!parsed.intent) parsed.intent = "general";
 
     return NextResponse.json(parsed);
 
   } catch (error) {
-    console.error("❌ CRITICAL RECOVERY LAYER EXCEPTION ENCOUNTERED:", error);
+    console.error("❌ CRITICAL RECOVERY EXCEPTION:", error);
     return NextResponse.json(
-      {
-        intent: "general",
-        reply: language === "hi-IN" 
-          ? "क्षमा चाहती हूँ, सर्वर से संपर्क स्थापित करने में कठिनाई हो रही है।" 
-          : "I apologize, there was an issue processing your request. Please try again."
-      },
+      { intent: "general", reply: "क्षमा चाहती हूँ, सर्ver से संपर्क स्थापित करने में कठिनाई हो रही है।" },
       { status: 500 }
     );
   }
