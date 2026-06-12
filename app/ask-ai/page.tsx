@@ -554,7 +554,7 @@ export default function AskAIPage() {
               </div>
             )}
 
-            /* {/* DOCUMENTS TAB */}
+            {/* /* {/* /* {/* DOCUMENTS TAB */}
             {activeTab === "documents" && (
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* LEFT CONSOLE */}
@@ -669,7 +669,7 @@ export default function AskAIPage() {
                   </div>
                 </div>
               </div>
-            )} */
+            )}  */} */ */}
 
                         {/* DOCUMENTS TAB */}
             {activeTab === "documents" && (
