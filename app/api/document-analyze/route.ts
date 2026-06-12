@@ -117,66 +117,53 @@ export async function POST(req: Request) {
     const { documentText, language } = body;
     const targetLang = (language || "english").toLowerCase();
 
-    console.log(`🤖 Forcing Absolute High-Fidelity Translation Stack for: ${targetLang}`);
+    console.log(`🤖 Forcing Absolute Dynamic Key-Matching Stack for: ${targetLang}`);
 
     const isHindi = targetLang === "hindi";
 
-    // Strict system structure to lock keys globally so frontend mapping never breaks
-    const systemPrompt = `You are JanMitra AI, an expert citizen services document analyzer and absolute real-time machine translator. Your single absolute directive is to analyze the user text and output ONLY a valid, single raw JSON object matching the exact keys below.
+    // 🌟 EXACT KEY LOCK: Standardizing JSON schemas to strictly match your UI page tags
+    const systemPrompt = `You are JanMitra AI, an expert citizen services document analyzer and professional real-time machine translator. Your absolute directive is to analyze the user text and output ONLY a valid, single raw JSON object matching the exact keys and specifications below.
 
 CRITICAL: Do not write any markdown code blocks like \`\`\`json, do not write extra text, and do not use list tokens like dashes (-), bullets, or asterisks (*).
 
+${isHindi ? `
+REQUIRED HINDI JSON SCHEMA (Keys must match exactly):
 {
-  "purpose": "Data string value text",
-  "dates": "Data string value text",
-  "requiredDocs": "Data string value text",
-  "actions": "Data string value text",
-  "summary": "Data string value text"
-}`;
+  "उद्देश्य": "दस्तावेज़ का मुख्य उद्देश्य और सरकारी एजेंडा क्या है, उसे सरल हिंदी वाक्यों में समझाएं।",
+  "महत्वपूर्ण तिथियां": "दस्तावेज़ में दी गई सभी तारीखें, अंतिम तिथियां (Last Dates) या समय-सीमा। यदि कोई तारीख न मिले, तो लिखें 'कोई निश्चित समय-सीमा उल्लेखित नहीं है'।",
+  "आवश्यक दस्तावेज": "नागरिकों को आवेदन या अनुपालन के लिए जो भी प्रमाण पत्र, फॉर्म, पहचान पत्र या कागजात जमा करने की आवश्यकता है, उनकी सूची। यदि कोई दस्तावेज़ आवश्यक न हो, तो लिखें 'कोई दस्तावेज़ आवश्यक नहीं है'।",
+  "आवश्यक कार्रवाई": "उपयोगकर्ता या आम नागरिक को इस आदेश के अनुसार आगे क्या-क्या कदम उठाने हैं, उन्हें क्रमवार (step-by-step) आसान निर्देशों में लिखें।",
+  "सरल सारांश": "पूरे दस्तावेज़ का मुख्य निचोड़ केवल 1-2 पंक्तियों में बेहद आसान और सरल हिंदी भाषा में लिखें।"
+}
+CRITICAL TRANSLATION LAW: You MUST write both the JSON keys and all values entirely in pure, simple, everyday conversational HINDI (Devnagari Script). Do not use English words or sentences in values.
+` : `
+REQUIRED ENGLISH JSON SCHEMA (Keys must match exactly):
+{
+  "purpose": "Extract the core reason or objective behind this specific document text.",
+  "dates": "Look for deadlines, timelines, last dates, or registration targets. If none exist, output 'No specific deadlines mentioned'.",
+  "requiredDocs": "Extract all specific certificates, application forms, or ID proofs requested from citizens. If none, write 'No documents required'.",
+  "actions": "Break down clear, sequential step-by-step actions required by the citizen.",
+  "summary": "Write a short 1-2 sentence layman explanation wrap-up."
+}
+CRITICAL LAW: Write both the JSON keys and values entirely in clean ENGLISH sentences.
+`}
 
-    // Isolating instructions completely based on language selection state
-    let userPrompt = "";
-
-    if (isHindi) {
-      userPrompt = `तुम्हारा काम नीचे दिए गए अंग्रेज़ी दस्तावेज़ (English text) को ध्यान से पढ़ना, उसका पूरा अर्थ समझना और उसे पूरी तरह से सरल, आम बोलचाल की हिंदी (Devnagari Script) में अनुवाद (Translate) करके नीचे दी गई JSON Keys के अंदर भरना है।
-
-सख्त निर्देश (All values MUST be written strictly in Hindi sentences):
-1. "purpose": इस दस्तावेज़ या सरकारी आदेश को जारी करने का मुख्य उद्देश्य, कारण और एजेंडा क्या है, उसे सरल हिंदी में समझाएं। (Don't copy English lines)
-2. "dates": दस्तावेज़ में दी गई सभी महत्वपूर्ण तारीखें, अंतिम तिथियां (Last Dates) या समय-सीमा ढूंढकर निकालें। यदि कोई तारीख न मिले, तो स्पष्ट लिखें "कोई निश्चित समय-सीमा उल्लेखित नहीं है"।
-3. "requiredDocs": नागरिकों को आवेदन या अनुपालन के लिए जो भी प्रमाण पत्र, फॉर्म, पहचान पत्र या कागजात जमा करने की आवश्यकता है, उनकी सूची सरल हिंदी में लिखें। यदि कोई दस्तावेज़ आवश्यक न हो, तो लिखें "कोई दस्तावेज़ आवश्यक नहीं है"।
-4. "actions": आम नागरिक या पाठक को इस आदेश के अनुसार आगे क्या-क्या कदम उठाने हैं, उन्हें क्रमवार (step-by-step) आसान हिंदी निर्देशों में लिखें।
-5. "summary": पूरे दस्तावेज़ का मुख्य निचोड़ केवल 1-2 पंक्तियों में बेहद आसान और सरल हिंदी भाषा में लिखें।
-
-ABSULUTE CONDITION: The JSON keys MUST remain exactly as "purpose", "dates", "requiredDocs", "actions", "summary". But every single string value inside them MUST be written in pure HINDI. Do not leave any English sentence untranslated.
-
-ENGLISH DOCUMENT TEXT TO TRANSLATE AND ANALYZE:
-${documentText}`;
-    } else {
-      userPrompt = `Analyze the provided document text and extract structural data patterns into clean regular English sentences for each parameter.
-
-INSTRUCTIONS FOR VALUE EXTRACTION:
-1. "purpose": Extract the core reason or objective behind this specific document text.
-2. "dates": Look for deadlines, timelines, last dates, or registration targets. If none exist, output "No specific deadlines mentioned".
-3. "requiredDocs": Extract all specific certificates, application forms, or ID proofs requested from citizens. If none, write "No documents required".
-4. "actions": Break down clear, sequential step-by-step actions required by the citizen.
-5. "summary": Write a short 1-2 sentence layman explanation wrap-up.
-
-DOCUMENT TEXT SEGMENT TO ANALYZE DYNAMICALLY:
-${documentText}`;
-    }
+STRICT CONSTRAINTS:
+1. Output ONLY the valid raw JSON object. Do not include markdown code block syntax (\`\`\`json), asterisks (*), list dashes (-), or hashes (#).
+2. Avoid any raw double-quotes inside the text values. Use single quotes if necessary.`;
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: `Here is the input document text context to process:\n\n${documentText}` }
       ],
-      temperature: 0.1,
+      temperature: 0.1
     });
 
     let outputText = completion.choices[0].message.content?.trim() || "{}";
     
-    // Scrub markdown block boundaries instantly
+    // Clean any unexpected markdown block wrappers instantly
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
@@ -184,7 +171,7 @@ ${documentText}`;
     outputText = outputText.replace(/\n/g, " ").replace(/\r/g, " ").trim();
 
     try {
-      // Primary verification pass
+      // Pass 1: Try direct structured JSON parsing
       const parsed = JSON.parse(outputText);
       
       Object.keys(parsed).forEach((key) => {
@@ -196,7 +183,7 @@ ${documentText}`;
       return NextResponse.json(parsed);
 
     } catch (parseError) {
-      console.warn("⚠️ JSON Syntax variation detected during translation parse. Running regex extractor:", parseError);
+      console.warn("⚠️ JSON Parse variation encountered. Booting dynamic regex line extractor:", parseError);
       
       const extractKey = (key: string, sourceText: string): string => {
         const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
@@ -204,18 +191,27 @@ ${documentText}`;
         return match ? match[1].replace(/[*#\-–•]/g, "").trim() : "";
       };
 
-      const dynamicParsed = {
-        purpose: extractKey("purpose", outputText) || (isHindi ? "दस्तावेज़ का उद्देश्य निर्दिष्ट नहीं है।" : "Objective not specified in document."),
-        dates: extractKey("dates", outputText) || (isHindi ? "कोई निश्चित तिथियां या समय-सीमा नहीं मिली।" : "No explicit deadlines found."),
-        requiredDocs: extractKey("requiredDocs", outputText) || (isHindi ? "कोई आवश्यक दस्तावेज़ निर्दिष्ट नहीं हैं।" : "No required documents specified."),
-        actions: extractKey("actions", outputText) || (isHindi ? "कोई विशिष्ट कार्रवाई आवश्यक नहीं है।" : "No immediate actions needed."),
-        summary: extractKey("summary", outputText) || (isHindi ? "संक्षिप्त सारांश निकालने में असमर्थ।" : "Layman summary extraction unavailable.")
-      };
-
-      return NextResponse.json(dynamicParsed);
+      // Full dynamic string fallback array mapping matching UI components seamlessly
+      if (isHindi) {
+        return NextResponse.json({
+          "उद्देश्य": extractKey("उद्देश्य", outputText) || "विवरण दस्तावेज़ में निर्दिष्ट नहीं है।",
+          "महत्वपूर्ण तिथियां": extractKey("महत्वपूर्ण तिथियां", outputText) || "कोई निश्चित समय-सीमा उपलब्ध नहीं है।",
+          "आवश्यक दस्तावेज": extractKey("आवश्यक दस्तावेज", outputText) || "कोई दस्तावेज़ आवश्यक नहीं है।",
+          "आवश्यक कार्रवाई": extractKey("आवश्यक कार्रवाई", outputText) || "कोई विशिष्ट कार्रवाई आवश्यक नहीं है।",
+          "सरल सारांश": extractKey("सरल सारांश", outputText) || "संक्षिप्त सारांश निकालने में असमर्थ।"
+        });
+      } else {
+        return NextResponse.json({
+          purpose: extractKey("purpose", outputText) || "Objective not specified in document.",
+          dates: extractKey("dates", outputText) || "No explicit deadlines found.",
+          requiredDocs: extractKey("requiredDocs", outputText) || "No required documents specified.",
+          actions: extractKey("actions", outputText) || "No immediate actions needed.",
+          summary: extractKey("summary", outputText) || "Layman summary extraction unavailable."
+        });
+      }
     }
   } catch (error) {
-    console.error("❌ Document analyze engine fatal collapse:", error);
-    return NextResponse.json({ error: "Dynamic data processing failure." }, { status: 500 });
+    console.error("❌ Document analyze engine critical loop failure:", error);
+    return NextResponse.json({ error: "Dynamic blueprint validation fault." }, { status: 500 });
   }
 }
