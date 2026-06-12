@@ -12,69 +12,53 @@ export async function POST(req: Request) {
     const { documentText, language } = body;
     const targetLang = (language || "english").toLowerCase();
 
-    console.log(`🤖 Dynamic Bilingual Analyzer Engine Active. Target Language Mode: ${targetLang}`);
+    console.log(`🤖 Hard-wiring master analysis structural grid for stack: ${targetLang}`);
 
-    // BILINGUAL SYSTEM PROMPT: Explaining the extraction context in both languages explicitly to the LLM
-    const systemPrompt = `You are JanMitra AI, an expert constitutional and legal document analyzer. Your absolute directive is to analyze the provided text and strictly output a valid raw JSON object matching the exact key structure below. Do not change or translate the keys.
+    const systemPrompt = `You are JanMitra AI, an expert constitutional and legal document analyzer. Your absolute directive is to extract metadata from the text data and natively serialize the key-value structures into a strict, valid JSON container matching this configuration exactly.
 
-REQUIRED JSON SCHEMA:
+REQUIRED JSON STRUCTURAL bluePRINT:
 {
-  "purpose": "String data value",
-  "dates": "String data value",
-  "requiredDocs": "String data value",
-  "actions": "String data value",
-  "summary": "String data value"
+  "purpose": "Value string data text here",
+  "dates": "Value string data text here",
+  "requiredDocs": "Value string data text here",
+  "actions": "Value string data text here",
+  "summary": "Value string data text here"
 }
 
-EXECUTION PROTOCOLS FOR THE 5 KEYS (WITH BILINGUAL LOGIC):
+EXECUTION PROTOCOLS FOR THE 5 KEYS:
+1. "purpose" (दस्तावेज़ का उद्देश्य): Explain the exact core reason, objective, or target governance agenda behind this specific document.
+2. "dates" (महत्वपूर्ण तिथियां): Extract all mandatory deadlines, timeline windows, target implementation intervals, or submission dates mentioned.
+3. "requiredDocs" (आवश्यक दस्तावेज): Meticulously extract all paperwork certificates, identity proofs, cards, or specific forms requested from citizens.
+4. "actions" (आवश्यक कार्रवाई): Break down clear, sequential actionable operational checklist items that the user/citizen must execute.
+5. "summary" (सरल सारांश): Provide a clean 1-2 sentence simplified layman translation explanation wrap-up.
 
-1. "purpose" (दस्तावेज़ का उद्देश्य):
-   - English: Explain the exact core reason, objective, or agenda behind this specific document.
-   - Hindi: इस दस्तावेज़ को जारी करने का मुख्य कारण, उद्देश्य या सरकारी एजेंडा क्या है, उसे सरल शब्दों में समझाएं।
-
-2. "dates" (महत्वपूर्ण तिथियां/समय-सीमा):
-   - English: Extract all mandatory deadlines, target frames, timeline dates, or registration dates mentioned in the text. If no dates are found, specify that clearly.
-   - Hindi: दस्तावेज़ में दी गई सभी महत्वपूर्ण तारीखें, अंतिम तिथियां (Last Dates), आवेदन की समय-सीमा या नियम लागू होने की तारीखों को ढूंढकर निकालें। यदि कोई तारीख न मिले, तो स्पष्ट लिखें।
-
-3. "requiredDocs" (आवश्यक दस्तावेज/कागजी कार्रवाई):
-   - English: Meticulously list any certificates, application forms, tokens, or physical proofs explicitly mentioned that citizens need to submit. If none are required, state it clearly.
-   - Hindi: नागरिकों को आवेदन या अनुपालन के लिए जो भी प्रमाण पत्र, पहचान पत्र (जैसे पैन कार्ड, राशन कार्ड आदि), फॉर्म, टोकन या भौतिक सबूत जमा करने की आवश्यकता है, उनकी पूरी सूची बनाएं। यदि कोई दस्तावेज़ आवश्यक न हो, तो साफ लिखें।
-
-4. "actions" (आवश्यक कार्रवाई/अगले कदम):
-   - English: Break down clear, sequential actionable steps or compliance items that the reader/user must perform.
-   - Hindi: उपयोगकर्ता या आम नागरिक को इस आदेश या दस्तावेज़ के अनुसार आगे क्या कदम उठाने हैं, उन्हें क्रमवार (step-by-step) आसान निर्देशों में तोड़कर लिखें।
-
-5. "summary" (सरल और संक्षिप्त सारांश):
-   - English: Provide a clean 1-2 sentence simplified layman translation explanation wrap-up of the document.
-   - Hindi: पूरे दस्तावेज़ का निचोड़ केवल 1-2 पंक्तियों में एक आम आदमी की समझ के अनुसार बेहद आसान भाषा में लिखें।
-
-STRICT LANGUAGE & TRANSLATION LAWS:
-- If target language choice is "hindi", you MUST write the text values for all 5 keys entirely in simple, easy-to-understand everyday HINDI (Devnagari Script). Avoid heavy Sanskrit or complex legal words.
-- If target language is "english", write the values in clean regular English sentences.
-- ABSOLUTE CONSTRAINT: Output ONLY the raw valid JSON object. Do not include markdown code block syntax (\`\`\`json), asterisks (*), list dashes (-), or hashes (#). Use clean paragraph spacing instead.
-- Internal Quotes: Avoid any raw double-quotes inside the text values. Use single quotes if necessary.`;
+STRICT TRANSLATION RULES:
+- If target language selection state is "hindi", you MUST write the plain text string values for all 5 schema keys completely in simple, everyday conversational HINDI (Devnagari Script). Avoid dense Sanskrit or overly complex legal terms.
+- If target language is "english", write everything in clear standard English text.
+- KEY CONSTRAINT: Keep the 5 JSON schema keys ("purpose", "dates", "requiredDocs", "actions", "summary") exactly in English lowercase as specified above. Do not translate the keys.
+- FORMAT LOCK: Output ONLY the valid raw JSON container. No markdown tags (\`\`\`json), no nested array loops, no text prefixes, and no terminal explanations. Remove any double quotes inside text values.`;
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Target Language State: ${targetLang}\n\nDocument text content payload:\n${documentText}` }
+        { role: "user", content: `Target Output Interface Script: ${targetLang}\n\nDocument Stream Segment to Parse dynamically:\n${documentText}` }
       ],
-      temperature: 0.1
+      temperature: 0.1,
     });
 
     let outputText = completion.choices[0].message.content?.trim() || "{}";
     
-    // Clean any unexpected markdown blocks out instantly
+    // Step 1: Strip unwanted markdown boundaries or trailing markers
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
     
-    // Remove newlines and tabs which break string structures inside JSON
+    // Step 2: Clear carriage breaks, trailing tokens, and escape indicators before JSON verification
     outputText = outputText.replace(/\n/g, " ").replace(/\r/g, " ").trim();
 
     try {
-      // Step 1: Standard direct JSON parsing
+      // Primary parsing verification pass
       const parsed = JSON.parse(outputText);
       
       Object.keys(parsed).forEach((key) => {
@@ -86,28 +70,45 @@ STRICT LANGUAGE & TRANSLATION LAWS:
       return NextResponse.json(parsed);
 
     } catch (parseError) {
-      console.warn("⚠️ JSON Parse failed due to script characters. Executing dynamic fallback regex parser:", parseError);
+      console.warn("⚠️ Complex matrix format detected, activating semantic string recovery stream:", parseError);
       
-      // Step 2: Fallback Regex Extractor to fetch dynamic content line-by-line without throwing syntax errors
-      const extractKey = (key: string, sourceText: string): string => {
-        const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
-        const match = sourceText.match(regex);
-        return match ? match[1] : "";
+      // Step 3: Advanced Semantic Lookup Extraction mapping to safeguard data strings if tokens leak
+      const parseValueForKey = (key: string, rawText: string): string => {
+        // Safe regex matching sequence targeting character intervals inside complex layout maps
+        const targetRegex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
+        const matchResult = rawText.match(targetRegex);
+        if (matchResult && matchResult[1]) {
+          return matchResult[1].replace(/[*#\-–•]/g, "").trim();
+        }
+        
+        // Multi-stage secondary string slice selector loop fallback
+        const keyToken = `"${key}"`;
+        if (rawText.includes(keyToken)) {
+          const splitStart = rawText.split(keyToken)[1];
+          if (splitStart && splitStart.includes('"')) {
+            const innerTokens = splitStart.split('"');
+            // If text stream separates correctly, return the targeted inner data block
+            if (innerTokens[1] && innerTokens[1].trim().length > 3) {
+              return innerTokens[1].replace(/[*#\-–•]/g, "").trim();
+            }
+          }
+        }
+        return "";
       };
 
-      // 100% Dynamic Fallback container with local language state markers
-      const dynamicParsed = {
-        purpose: extractKey("purpose", outputText) || (targetLang === "hindi" ? "उद्देश्य दस्तावेज़ में निर्दिष्ट नहीं है" : "Objective not specified in document"),
-        dates: extractKey("dates", outputText) || (targetLang === "hindi" ? "कोई महत्वपूर्ण तिथियां नहीं मिलीं" : "No specific timelines found"),
-        requiredDocs: extractKey("requiredDocs", outputText) || (targetLang === "hindi" ? "कोई आवश्यक दस्तावेज़ उल्लेखित नहीं हैं" : "No required documents specified"),
-        actions: extractKey("actions", outputText) || (targetLang === "hindi" ? "कोई कार्रवाई आवश्यक नहीं है" : "No immediate actions needed"),
-        summary: extractKey("summary", outputText) || (targetLang === "hindi" ? "संक्षिप्त सारांश निकालने में असमर्थ" : "Layman summary extraction unavailable")
+      // Fully customized dynamic tracking matrix fallback
+      const crossMappedData = {
+        purpose: parseValueForKey("purpose", outputText) || (targetLang === "hindi" ? "विवरण दस्तावेज़ से निकालना संभव नहीं हो सका।" : "Dynamic document description not parsed."),
+        dates: parseValueForKey("dates", outputText) || (targetLang === "hindi" ? "कोई निश्चित समय-सीमा उपलब्ध नहीं है।" : "No explicit timeline dates captured."),
+        requiredDocs: parseValueForKey("requiredDocs", outputText) || (targetLang === "hindi" ? "विशिष्ट कागजी कार्रवाई का विवरण नहीं मिला।" : "No baseline paperwork items detected."),
+        actions: parseValueForKey("actions", outputText) || (targetLang === "hindi" ? "कोई तुरंत कदम उठाने की आवश्यकता नहीं बताई गई है।" : "No structural compliance operations found."),
+        summary: parseValueForKey("summary", outputText) || (targetLang === "hindi" ? "संक्षिप्त विश्लेषण तैयार नहीं किया जा सका।" : "Layman translation text extraction incomplete.")
       };
 
-      return NextResponse.json(dynamicParsed);
+      return NextResponse.json(crossMappedData);
     }
   } catch (error) {
-    console.error("❌ Document analyze loop critical failure:", error);
-    return NextResponse.json({ error: "Dynamic data processing failure." }, { status: 500 });
+    console.error("❌ Critical execution breakdown on backend layer:", error);
+    return NextResponse.json({ error: "Dynamic parser execution engine exception loop hit." }, { status: 500 });
   }
 }
