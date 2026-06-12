@@ -12,80 +12,93 @@ export async function POST(req: Request) {
     const { documentText, language } = body;
     const targetLang = (language || "english").toLowerCase();
 
-    console.log(`🤖 Triggering Master XML-Regex Core Engine for stack: ${targetLang}`);
+    console.log(`🤖 Deploying strict dual-prompt structural layout for: ${targetLang}`);
 
-    const systemPrompt = `You are JanMitra AI, an expert constitutional and legal document analyzer. Your absolute directive is to extract metadata from the text data dynamically and wrap your structural output tightly inside the exact XML tags specified below.
+    // Keeping System Prompt short and zero-example to prevent model from repeating prompt text
+    const systemPrompt = `You are JanMitra AI, an expert citizen services document analyzer. Your absolute directive is to analyze the user text and output ONLY a valid, single raw JSON object matching the exact keys below. 
 
-Do not output any JSON syntax, do not include markdown code ticks (\`\`\`), and do not use lists, asterisks (*), or hashes (#). Use pure regular paragraphs inside the tags.
+CRITICAL: Do not write any markdown code blocks like \`\`\`json, do not write extra text, and do not use list tokens like dashes (-), bullets, or asterisks (*).
 
-FOLLOW THIS XML LAYOUT STRUCTURE EXACTLY:
-<purpose>
-Analyze the document text and explain the exact core reason, objective, or agenda behind this specific document.
-(यदि भाषा हिंदी है: इस दस्तावेज़ को जारी करने का मुख्य उद्देश्य या सरकारी एजेंडा क्या है, उसे सरल हिंदी शब्दों में समझाएं।)
-</purpose>
+{
+  "purpose": "Core objective of the document",
+  "dates": "Specific deadlines or targets found",
+  "requiredDocs": "Mandatory proofs, identity certificates or forms required",
+  "actions": "Sequential step-by-step next tasks for the reader",
+  "summary": "1-2 sentence simplified layman summary wrap-up"
+}`;
 
-<dates>
-Meticulously extract all mandatory deadlines, timeline frames, implementation targets, last dates, or release dates mentioned in the text. If no dates are found, write that explicitly.
-(यदि भाषा हिंदी है: दस्तावेज़ में दी गई सभी महत्वपूर्ण तारीखें, अंतिम तिथियां (Last Dates), आवेदन की समय-सीमा या नियम लागू होने की तारीखों को ढूंढकर निकालें। यदि कोई तारीख न मिले, तो स्पष्ट लिखें।)
-</dates>
+    // Moving language instructions directly into user context where LLM executes best
+    const userPrompt = `Target Language State: ${targetLang}
 
-<requiredDocs>
-Meticulously list any certificates, identity proofs, forms, tokens, or physical proofs explicitly mentioned that citizens need to submit for compliance or application. If none, write that explicitly.
-(यदि भाषा हिंदी है: नागरिकों को आवेदन या अनुपालन के लिए जो भी प्रमाण पत्र, पहचान पत्र, फॉर्म, या भौतिक सबूत जमा करने की आवश्यकता है, उनकी पूरी सूची बनाएं। यदि कोई दस्तावेज़ आवश्यक न हो, तो साफ लिखें।)
-</requiredDocs>
+INSTRUCTIONS FOR VALUE EXTRACTION:
+1. "purpose": Extract the core reason behind this specific document text.
+2. "dates": Look for deadlines, timelines, last dates, or targets. If none exist, explicitly output "No specific deadlines mentioned" in the target language.
+3. "requiredDocs": Extract all specific certificates, application forms, or ID proofs requested from citizens. If none, write "No documents required" in the target language.
+4. "actions": Break down clear, step-by-step actions required by the citizen.
+5. "summary": Write a short 1-2 sentence layman explanation wrap-up.
 
-<actions>
-Break down clear, sequential step-by-step actionable items or compliance checklist tasks that the reader/user must perform based on the document.
-(यदि भाषा हिंदी है: उपयोगकर्ता या आम नागरिक को इस आदेश या दस्तावेज़ के अनुसार आगे क्या कदम उठाने हैं, उन्हें क्रमवार step-by-step आसान निर्देशों में लिखें।)
-</actions>
+LANGUAGE LAW:
+- If Target Language State is "hindi", write the sentence values for all 5 JSON keys entirely in pure, simple, everyday conversational HINDI (Devnagari Script).
+- If Target Language State is "english", write everything in clean English.
+- The 5 JSON keys ("purpose", "dates", "requiredDocs", "actions", "summary") must stay exactly in English as specified.
 
-<summary>
-Provide a clean 1-2 sentence simplified layman translation explanation wrap-up of the entire text data.
-(यदि भाषा हिंदी है: पूरे दस्तावेज़ का निचोड़ केवल 1-2 पंक्तियों में एक आम आदमी की समझ के अनुसार बेहद आसान भाषा में लिखें।)
-</summary>
-
-STRICT TRANSLATION LAWS:
-- If target language selection parameter is "hindi", you MUST write the explanations/contents inside all 5 XML tags natively in simple, conversational everyday HINDI (Devnagari Script). Avoid dense Sanskrit or overly complex legal terms.
-- If target language is "english", write the contents in clear standard English sentences.
-- CRITICAL CONSTRAINT: The XML tag markers (<purpose>, <dates>, <requiredDocs>, <actions>, <summary>) must ALWAYS remain exactly in English lowercase as shown. Never translate or modify the tag names.`;
+DOCUMENT TEXT SEGMENT TO ANALYZE DYNAMICALLY:
+${documentText}`;
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Target Language Code: ${targetLang}\n\nDocument text content payload:\n${documentText}` }
+        { role: "user", content: userPrompt }
       ],
       temperature: 0.1,
     });
 
-    const responseText = completion.choices[0].message.content || "";
-    console.log("📥 Raw XML Stream segments fetched from model core array.");
+    let outputText = completion.choices[0].message.content?.trim() || "{}";
+    
+    // Scrub markdown indicators instantly
+    if (outputText.includes("{")) {
+      outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
+    }
+    
+    outputText = outputText.replace(/\n/g, " ").replace(/\r/g, " ").trim();
 
-    // Master Regex Extraction Engine: Grabs string intervals inside tags safely even if format shifts
-    const extractXmlBlock = (tagName: string, sourceText: string): string => {
-      const regex = new RegExp(`<${tagName}>\\s*([\\s\\S]*?)\\s*</${tagName}>`, "i");
-      const match = sourceText.match(regex);
-      if (match && match[1]) {
-        return match[1].replace(/[*#\-–•`"]/g, "").trim();
-      }
-      return "";
-    };
+    try {
+      // Primary verification pass
+      const parsed = JSON.parse(outputText);
+      
+      Object.keys(parsed).forEach((key) => {
+        if (typeof parsed[key] === "string") {
+          parsed[key] = parsed[key].replace(/[*#\-–•]/g, "").trim();
+        }
+      });
 
-    const isHindi = targetLang === "hindi";
+      return NextResponse.json(parsed);
 
-    // Strictly mapping to the exact standard keys your frontend page schema expects
-    const finalPayloadContainer = {
-      purpose: extractXmlBlock("purpose", responseText) || (isHindi ? "विवरण दस्तावेज़ में निर्दिष्ट नहीं है।" : "Objective description not specified in document."),
-      dates: extractXmlBlock("dates", responseText) || (isHindi ? "कोई महत्वपूर्ण तिथियां या समय-सीमा नहीं मिली।" : "No explicit deadlines or timelines found."),
-      requiredDocs: extractXmlBlock("requiredDocs", responseText) || (isHindi ? "कोई आवश्यक दस्तावेज़ उल्लेखित नहीं हैं।" : "No required documents specified."),
-      actions: extractXmlBlock("actions", responseText) || (isHindi ? "कोई विशिष्ट कार्रवाई आवश्यक नहीं है।" : "No immediate actionable compliance items found."),
-      summary: extractXmlBlock("summary", responseText) || (isHindi ? "संक्षिप्त सारांश निकालने में असमर्थ।" : "Layman summary extraction unavailable.")
-    };
+    } catch (parseError) {
+      console.warn("⚠️ JSON Syntax variation detected, initializing semantic layout parser:", parseError);
+      
+      // Dynamic fallback regex engine to secure keys line-by-line if model slips characters
+      const extractKey = (key: string, sourceText: string): string => {
+        const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
+        const match = sourceText.match(regex);
+        return match ? match[1].replace(/[*#\-–•]/g, "").trim() : "";
+      };
 
-    return NextResponse.json(finalPayloadContainer);
+      const isHindi = targetLang === "hindi";
 
+      const dynamicParsed = {
+        purpose: extractKey("purpose", outputText) || (isHindi ? "दस्तावेज़ का उद्देश्य निर्दिष्ट नहीं है।" : "Objective not specified in document."),
+        dates: extractKey("dates", outputText) || (isHindi ? "कोई निश्चित तिथियां या समय-सीमा नहीं मिली।" : "No explicit deadlines found."),
+        requiredDocs: extractKey("requiredDocs", outputText) || (isHindi ? "कोई आवश्यक दस्तावेज़ निर्दिष्ट नहीं हैं।" : "No required documents specified."),
+        actions: extractKey("actions", outputText) || (isHindi ? "कोई विशिष्ट कार्रवाई आवश्यक नहीं है।" : "No immediate actions needed."),
+        summary: extractKey("summary", outputText) || (isHindi ? "संक्षिप्त सारांश निकालने में असमर्थ।" : "Layman summary extraction unavailable.")
+      };
+
+      return NextResponse.json(dynamicParsed);
+    }
   } catch (error) {
-    console.error("❌ Document analyze loop engine critical breakdown:", error);
-    return NextResponse.json({ error: "Bilingual matrix parsing exception route hit." }, { status: 500 });
+    console.error("❌ Document analyze engine loop collapse:", error);
+    return NextResponse.json({ error: "Dynamic matrix token leakage sequence hit." }, { status: 500 });
   }
 }
