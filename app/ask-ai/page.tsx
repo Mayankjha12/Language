@@ -554,7 +554,7 @@ export default function AskAIPage() {
               </div>
             )}
 
-            {/* DOCUMENTS TAB */}
+            /* {/* DOCUMENTS TAB */}
             {activeTab === "documents" && (
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* LEFT CONSOLE */}
@@ -669,7 +669,140 @@ export default function AskAIPage() {
                   </div>
                 </div>
               </div>
+            )} */
+
+                        {/* DOCUMENTS TAB */}
+            {activeTab === "documents" && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* LEFT CONSOLE */}
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                    <h2 className="text-2xl sm:text-3xl font-bold">
+                      {docLanguage === "hindi" ? "दस्तावेज़ विश्लेषक" : "Document Explainer"}
+                    </h2>
+                    <select
+                      name="docLanguage" 
+                      value={docLanguage} 
+                      onChange={(e) => setDocLanguage(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-emerald-300 font-semibold"
+                    >
+                      <option value="english">English Summary</option>
+                      <option value="hindi">हिंदी सारांश</option>
+                    </select>
+                  </div>
+
+                  <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-pointer relative">
+                    <input 
+                      type="file" 
+                      accept=".txt,.pdf,.docx,.png,.jpg,.jpeg"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                    />
+                    <div className="text-4xl mb-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">📄</div>
+                    <p className="text-white/80 font-medium text-sm mb-1">
+                      {file ? `Selected: ${file.name}` : (docLanguage === "hindi" ? "अपनी .pdf, .txt, .png, या .jpg फ़ाइल यहाँ अपलोड करें" : "Drag & drop your government file here")}
+                    </p>
+                    <p className="text-white/40 text-xs">
+                      Supported Formats: PDF, PNG, JPG, TXT, DOCX
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={handleAnalyze}
+                    disabled={documentLoading}
+                    className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white mt-8 disabled:opacity-50`}
+                  >
+                    {documentLoading 
+                      ? (docLanguage === "hindi" ? "विश्लेषण जारी है..." : "Analyzing...") 
+                      : (docLanguage === "hindi" ? "दस्तावेज़ का विश्लेषण करें →" : "Analyze Document →")}
+                  </button>
+                </div>
+
+                {/* RIGHT CONSOLE - RESULTS */}
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6">
+                    {docLanguage === "hindi" ? "एआई सारांश" : "AI Summary"}
+                  </h2>
+
+                  <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
+
+                    {/* Empty state */}
+                    {!analysisResult && !documentLoading && (
+                      <p className="text-white/45 text-sm">
+                        {docLanguage === "hindi" 
+                          ? "विवरण देखने के लिए फ़ाइल अपलोड करें।" 
+                          : "Upload a file to see the analysis."}
+                      </p>
+                    )}
+
+                    {/* Loading state */}
+                    {documentLoading && (
+                      <div className="text-sm text-white/50 animate-pulse text-center py-10">
+                        {docLanguage === "hindi" 
+                          ? "सरकारी दस्तावेज़ का विश्लेषण किया जा रहा है..." 
+                          : "Analyzing document structures..."}
+                      </div>
+                    )}
+
+                    {/* Results */}
+                    {analysisResult && (
+                      <>
+                        {/* Purpose / उद्देश्य */}
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "उद्देश्य" : "Purpose"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["उद्देश्य"] || analysisResult.purpose || "—"}
+                          </p>
+                        </div>
+
+                        {/* Dates / महत्वपूर्ण तिथियां */}
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां" : "Important Dates"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["महत्वपूर्ण तिथियां"] || analysisResult.dates || "—"}
+                          </p>
+                        </div>
+
+                        {/* Required Docs / आवश्यक दस्तावेज */}
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक दस्तावेज" : "Required Documents"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["आवश्यक दस्तावेज"] || analysisResult.requiredDocs || "—"}
+                          </p>
+                        </div>
+
+                        {/* Actions / आवश्यक कार्रवाई */}
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक कार्रवाई" : "Actions Needed"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["आवश्यक कार्रवाई"] || analysisResult.actions || "—"}
+                          </p>
+                        </div>
+
+                        {/* Summary / सरल सारांश */}
+                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "सरल सारांश" : "Simple Summary"}
+                          </h3>
+                          <p className="text-white/90 text-sm font-medium leading-relaxed">
+                            {analysisResult["सरल सारांश"] || analysisResult.summary || "—"}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
+
 
             {/* HELP / MULTI-LINGUAL CHAT DISPLAY */}
             {activeTab === "help" && (
