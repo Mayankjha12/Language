@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const openai = new OpenAI({
   apiKey: process.env.SARVAM_API_KEY,
-  baseURL: "https://api.sarvam.ai/v1", // FIXED: Cleaned brackets layout from URL string template
+  baseURL: "https://api.sarvam.ai/v1",
 });
 
 export async function POST(req: Request) {
@@ -42,18 +42,15 @@ STRICT INSTRUCTION RULES:
 
     let outputText = completion.choices[0].message.content || "{}";
     
-    // Cleaning any unexpected trailing or leading texts before parse execution loop
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
     
-    // Scrubbing dangerous carriage line tabs which break string objects tracking arrays
     outputText = outputText.replace(/\n/g, " ").replace(/\r/g, " ").trim();
 
     try {
       const parsed = JSON.parse(outputText);
       
-      // Secondary strict serialization sweep to strip any lingering layout symbol tokens
       Object.keys(parsed).forEach((key) => {
         if (typeof parsed[key] === "string") {
           parsed[key] = parsed[key].replace(/[*#\-–•]/g, "").trim();
@@ -65,7 +62,6 @@ STRICT INSTRUCTION RULES:
     } catch (parseError) {
       console.warn("⚠️ Structural drift in model parsing framework, deploying fallback sequence:", parseError);
       
-      // Bulletproof Fallback Framework mapped precisely to frontend variable configurations
       if (targetLang === "hindi") {
         return NextResponse.json({
           purpose: "इस आदेश का मुख्य उद्देश्य आवासीय कल्याण संघों (RWAs) और व्यावसायिक प्रतिष्ठानों जैसे बड़े कचरा उत्पादकों को स्रोत पर ही कचरे का प्रसंस्करण और पृथक्करण करने के लिए अनिवार्य बनाना है ताकि नगर पालिका व्यवस्था में सुधार किया जा सके।",
