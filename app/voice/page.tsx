@@ -5,7 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 
-const languages = [
+interface LanguageConfig {
+  id: number;
+  label: string;
+  value: string;
+}
+
+const languages: LanguageConfig[] = [
   { id: 1, label: "English", value: "en-US" },
   { id: 2, label: "हिन्दी", value: "hi-IN" },
   { id: 3, label: "বাংলা", value: "bn-IN" },
@@ -34,40 +40,40 @@ export default function VoicePage() {
   const openServiceText: Record<string, string> = {
     "en-US": "Open Recommended Service", "hi-IN": "अनुशंसित सेवा खोलें", "bn-IN": "প্রস্তাবিত পরিষেবা খুলুন",
     "ta-IN": "பரிந்துரைக்கப்பட்ட சேவையைத் திறக்கவும்", "te-IN": "സിఫార్సు చేసిన సేవను తెరవండి", "mr-IN": "शिफारस केलेली सेवा उघडा",
-    "gu-IN": "ભલામણ કરેલી સેવા ખોલો", "pa-IN": "ਸਿਫਾਰਸ਼ ਕੀਤੀ ਸੇਵਾ ਖੋਲ੍ਹੋ", "kn-IN": "ಶಿಫարሱ ಮಾಡಿದ ಸೇವೆ ತೆರೆಯಿರಿ",
+    "gu-IN": "ભલામણ કરેલી સેવા ખોલો", "pa-IN": "ਸਿਫਾਰਸ਼ ਕੀਤੀ ਸੇਵਾ ਖੋਲ੍ਹੋ", "kn-IN": "ಶಿಫਾਰಸು ಮಾಡಿದ ಸೇವೆ ತೆರೆಯಿರಿ",
     "ml-IN": "ശുപാർശ ചെയ്ത സേവനം തുറക്കുക", "or-IN": "ପ୍ରସ୍ତାବିତ ସେବା ଖୋଲନ୍ତୁ", "ur-IN": "تجویز کردہ سروس کھولیں",
     "as-IN": "পৰামৰ্শ দিয়া সেৱা খোলক", "mai-IN": "সুझाओल सेवा खोलू", "bho-IN": "সুझावल सेवा खोलीं",
-    "sa-IN": "अनुशंसितसेवां उद्घाटयतु", "kok-IN": "शिफारस केलेली सेवा उघडा", "ne-IN": "सिफारिश गरिएको सेवा खोल्नुहोस्",
+    "sa-IN": "अनुशंसितसेवां उद्घाटयतु", "kok-IN": "शिफारस केलेली सेवा उघडा", "ne-IN": "сиफारिश गरिएको सेवा खोल्नुहोस्",
     "mni-IN": "Recommended Service Open Tou", "doi-IN": "सिफारिश कित्ती सेवा खोलो", "sd-IN": "تجويز ڪيل سروس ڪوليو",
     "ks-IN": "تجویز کرمُत سروس کُلِو"
   };
 
   const uiText: Record<string, {
     title: string; subtitle: string; listening: string; thinking: string; ready: string;
-    transcript: string; placeholder: string; response: string;
+    transcript: string; placeholder: string; response: string; defaultResponse: string;
   }> = {
-    "en-US": { title: "Maya", subtitle: "Your multilingual government assistant", listening: "Listening... Speak naturally", thinking: "AI is thinking...", ready: "Ready", transcript: "Live Transcript Panel", placeholder: "Speak something...", response: "AI Response" },
-    "hi-IN": { title: "माया", subtitle: "आपकी बहुभाषी सरकारी सहायक", listening: "सुन रही हूँ... सहजता से बोलें", thinking: "सोच रही हूँ...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "कुछ बोलिए...", response: "उत्तर" },
-    "bn-IN": { title: "মায়া", subtitle: "আপনার বহুভাষিক সরকারি সহকারী", listening: "শুনছি...", thinking: "ভাবছি...", ready: "প্রস্তুত", transcript: "লাইভ ট্রান্সক্রিপ্ট", placeholder: "কিছু বলুন...", response: "উত্তর" },
-    "ta-IN": { title: "மாயா", subtitle: "உங்கள் பலமொழி அரசு உதவியாளர்", listening: "கேட்டுக்கொண்டு இருக்கிறேன்...", thinking: "யோசித்து கொண்டிருக்கிறேன்...", ready: "தயார்", transcript: "நேரடி உரை", placeholder: "ஏதாவது பேசுங்கள்...", response: "பதில்" },
-    "te-IN": { title: "మాయా", subtitle: "మీ బహుభాషా ప్రభుత్వ సహాయకురాలు", listening: "ವಿంటున్నాను...", thinking: "ఆలోచిస్తున్నాను...", ready: "సిద్ధంగా ఉంది", transcript: "ప్రత్యక్ష ట్రాన్స్క్రిప్ట్", placeholder: "ఏదైనా మాట్లాడండి...", response: "సమాధానం" },
-    "mr-IN": { title: "माया", subtitle: "तुमची बहुभाषिक सरकारी सहाय्यक", listening: "ऐकत आहे...", thinking: "विचार करत आहे...", ready: "तयार", transcript: "थेट ट्रान्सक्रिप्ट", placeholder: "काहीतरी बोला...", response: "उत्तर" },
-    "gu-IN": { title: "માયા", subtitle: "તમારી બહુભાષી સરકારી સહાયક", listening: "સાંભળી રહી છું...", thinking: "વિચારી રહી છું...", ready: "તૈયાર", transcript: "લાઈવ ટ્રાન્સક્રિપ્ટ", placeholder: "કંઈક બોલો...", response: "જવાબ" },
-    "pa-IN": { title: "ਮਾਇਆ", subtitle: "ਤੁਹਾਡੀ ਬਹੁਭਾਸ਼ੀ ਸਰਕਾਰੀ ਸਹਾਇਕ", listening: "ਸੁਣ ਰਹੀ ਹਾਂ...", thinking: "ਸੋਚ ਰਹੀ ਹਾਂ...", ready: "ਤਿਆਰ", transcript: "ਲਾਈਵ ਟ੍ਰਾਂਸਕ੍ਰਿਪਟ", placeholder: "ਕੁਝ ਬੋਲੋ...", response: "ਜਵਾਬ" },
-    "kn-IN": { title: "ಮಾಯಾ", subtitle: "ನಿಮ್ಮ ಬಹುಭಾಷಾ ಸರ್ಕಾರಿ ಸಹಾಯಕಿ", listening: "ಕೇಳುತ್ತಿದ್ದೇನೆ...", thinking: "ಯೋಚಿಸುತ್ತಿದ್ದೇನೆ...", ready: "ಸಿದ್ಧ", transcript: "ಲೈವ್ ಟ್ರಾನ್ಸ್‌ಕ್ರಿಪ್ಟ್", placeholder: "ಏನಾದರೂ ಮಾತನಾಡಿ...", response: "ಉತ್ತರ" },
-    "ml-IN": { title: "മായ", subtitle: "നിങ്ങളുടെ ബਹੁഭാഷാ സർക്കാർ സഹായി", listening: "കേൾക്കുന്നു...", thinking: "ചിന്തിക്കുന്നു...", ready: "തയ്യാർ", transcript: "ലൈവ് ട്രാൻസ്ക്രിപ്റ്റ്", placeholder: "എന്തെങ്കിലും പറയൂ...", response: "മറുപടി" },
-    "or-IN": { title: "මାୟା", subtitle: "ଆପଣଙ୍କର ବହୁଭਾଷୀ ସରକାରୀ ସହାୟିକା", listening: "ଶୁଣୁଛି...", thinking: "ଭାବୁଛି...", ready: "ପ୍ରସ୍ତୁਤ", transcript: "ଲାଇଭ୍ ଟ୍ରାନ୍ସକ୍ରିପ୍ଟ", placeholder: "କିଛି କୁହନ୍ତੁ...", response: "ଉତ୍ତର" },
-    "ur-IN": { title: "مایا", subtitle: "آپ کی کثیر لسانی سرکاری معاون", listening: "سن رہی ہوں...", thinking: "سوچ رہی ہوں...", ready: "تیار", transcript: "لائیو ٹرانسکرپٹ", placeholder: "کچھ بولیں...", response: "جواب" },
-    "as-IN": { title: "মায়া", subtitle: "আপোনাৰ বহুভাষিক চৰকাৰী সহায়িকা", listening: "শুনিছোঁ...", thinking: "ভাবি আছোঁ...", ready: "প্ৰস্তুত", transcript: "লাইভ ট্ৰান্সক্ৰিপ্ট", placeholder: "কিবা কওক...", response: "উত্তৰ" },
-    "mai-IN": { title: "माया", subtitle: "अहाँक बहुभाषी सरकारी सहायक", listening: "सुनि रहल छी...", thinking: "विचार कए रहल छी...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "किछु कहू...", response: "उत्तर" },
-    "bho-IN": { title: "माया", subtitle: "रउआ के बहुभाषी सरकारी सहायक", listening: "सुनत बानी...", thinking: "सोचत बानी...", ready: "तैयार बा", transcript: "लाइव快速प्रतिलेखन", placeholder: "कुछ बोलीं...", response: "जवाब" },
-    "sa-IN": { title: "माया", subtitle: "भवतः बहुभाषिकः सरकारी सहायिका", listening: "शृणोमि...", thinking: "चिन्तयामि...", ready: "सज्जम्", transcript: "प्रत्यक्ष प्रतिलेखः", placeholder: "किमपि वदतु...", response: "उत्तरम्" },
-    "kok-IN": { title: "माया", subtitle: "तुमची बहुभाषिक सरकारी सहायिका", listening: "आयकत आसां...", thinking: "विचार करता आसां...", ready: "तयार", transcript: "लाइव्ह ट्रान्सक्रिप्ट", placeholder: "काय तरी सांग...", response: "उत्तर" },
-    "ne-IN": { title: "माया", subtitle: "तपाईंको बहुभाषिक सरकारी सहायक", listening: "सुन्दै छु...", thinking: "सोच्दै छु...", ready: "तयार", transcript: "लाइभ ट्रान्सक्रिप्ट", placeholder: "केही বোल्नुहोस्...", response: "उत्तर" },
-    "mni-IN": { title: "ꯃꯥꯌꯥ", subtitle: "Your multilingual government assistant", listening: "Listening...", thinking: "Thinking...", ready: "Ready", transcript: "Live Transcript", placeholder: "Speak something...", response: "Response" },
-    "doi-IN": { title: "माया", subtitle: "तुहाडी बहुभाषी सरकारी सहायक", listening: "सुणी रही आं...", thinking: "सोची रही आं...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "कुज बोलो...", response: "जवाब" },
-    "sd-IN": { title: "مايا", subtitle: "توهان جي گهڻ ٻولي سرڪاري مددگار", listening: "ٻڌي رهي آهيان...", thinking: "سوچي رهي آهيان...", ready: "تيار", transcript: "لائيو ٽرانسڪرپٽ", placeholder: "ڪجهه ڳالهايو...", response: "جواب" },
-    "ks-IN": { title: "مایا", subtitle: "تُہند کثیر لسانی سرکاری معاون", listening: "سونان چھس...", thinking: "سوچان چھس...", ready: "تیار", transcript: "لائیو ٹرانسکرپٹ", placeholder: "کُجھ वनीव...", response: "جواب" }
+    "en-US": { title: "Maya", subtitle: "Your multilingual government assistant", listening: "Listening... Speak naturally", thinking: "AI is thinking...", ready: "Ready", transcript: "Live Transcript Panel", placeholder: "Speak something...", response: "AI Response", defaultResponse: "Awaiting voice input..." },
+    "hi-IN": { title: "माया", subtitle: "आपकी बहुभाषी सरकारी सहायक", listening: "सुन रही हूँ... सहजता से बोलें", thinking: "सोच रही हूँ...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "कुछ बोलिए...", response: "उत्तर", defaultResponse: "बोलना शुरू करें..." },
+    "bn-IN": { title: "মায়া", subtitle: "আপনার বহুভাষিক সরকারি সহকারী", listening: "শুনছি...", thinking: "ভাবছি...", ready: "প্রস্তুত", transcript: "লাইভ ট্রান্সক্রিপ্ট", placeholder: "কিছু বলুন...", response: "উত্তর", defaultResponse: "কথা বলা শুরু করুন..." },
+    "ta-IN": { title: "மாயா", subtitle: "உங்கள் பலமொழி அரசு உதவியாளர்", listening: "கேட்டுக்கொண்டு இருக்கிறேன்...", thinking: "யோசித்து கொண்டிருக்கிறேன்...", ready: "தயார்", transcript: "நேரடி உரை", placeholder: "ஏதாவது பேசுங்கள்...", response: "பதில்", defaultResponse: "பேசத் தொடங்குங்கள்..." },
+    "te-IN": { title: "మాయా", subtitle: "మీ బహుభాషా ప్రభుత్వ సహాయకురాలు", listening: "ವಿంటున్నాను...", thinking: "ఆలోచిస్తున్నాను...", ready: "సిద్ధంగా ఉంది", transcript: "ప్రత్యక్ష ట్రాన్స్క్రిప్ట్", placeholder: "ఏదైనా మాట్లాడండి...", response: "సమాధానం", defaultResponse: "మాట్లాడటం ప్రారంభించండి..." },
+    "mr-IN": { title: "माया", subtitle: "तुमची बहुभाषिक सरकारी सहाय्यक", listening: "ऐकत आहे...", thinking: "विचार करत आहे...", ready: "तयार", transcript: "थेट ट्रान्सक्रिप्ट", placeholder: "काहीतरी बोला...", response: "उत्तर", defaultResponse: "बोलणे सुरू करा..." },
+    "gu-IN": { title: "માયા", subtitle: "તમારી બહુભાષી સરકારી સહાયક", listening: "સાંભળી રહી છું...", thinking: "વિચારી રહી છું...", ready: "તૈયાર", transcript: "લાઈવ ટ્રાન્સಕ್ರિપ્ટ", placeholder: "კંઈક બોલો...", response: "જવાબ", defaultResponse: "બોલવાનું શરૂ કરો..." },
+    "pa-IN": { title: "ਮਾਇਆ", subtitle: "ਤੁਹਾਡੀ ਬਹੁਭਾਸ਼ੀ ਸਰਕਾਰੀ ਸਹਾਇਕ", listening: "ਸੁਣ ਰਹੀ ਹਾਂ...", thinking: "ਸੋਚ ਰਹੀ ਹਾਂ...", ready: "ਤਿਆਰ", transcript: "ਲਾਈਵ ਟ੍ਰਾਂਸਕ੍ਰਿਪਟ", placeholder: "ਕੁਝ ਬੋਲੋ...", response: "ਜਵਾਬ", defaultResponse: "ਬੋਲਣਾ ਸ਼ੁਰੂ ਕਰੋ..." },
+    "kn-IN": { title: "ಮಾಯಾ", subtitle: "ನಿಮ್ಮ ಬಹುಭಾಷಾ ಸರ್ಕಾರಿ ಸಹಾಯಕಿ", listening: "ಕೇಳುತ್ತಿದ್ದೇನೆ...", thinking: "ಯೋಚಿಸುತ್ತಿದ್ದೇನೆ...", ready: "ಸಿದ್ಧ", transcript: "ಲೈವ್ ಟ್ರಾನ್ಸ್‌ಕ್ರಿಪ್ಟ್", placeholder: "ಏನಾದರೂ ಮಾತನಾಡಿ...", response: "ಉತ್ತರ", defaultResponse: "ಮಾತನಾಡಲು ಪ್ರಾರಂಭಿಸಿ..." },
+    "ml-IN": { title: "മായ", subtitle: "നിങ്ങളുടെ ബਹੁഭാഷാ സർക്കാർ സഹായി", listening: "കേൾക്കുന്നു...", thinking: "ചിന്തിക്കുന്നു...", ready: "തയ്യാർ", transcript: "ലൈവ് ട്രാൻസ്ക്രിപ്റ്റ്", placeholder: "എന്തെങ്കിലും പറയൂ...", response: "മറുപടി", defaultResponse: "സംസാരിക്കാൻ ആരംഭിക്കുക..." },
+    "or-IN": { title: "මାୟା", subtitle: "ଆପଣଙ୍କର ବହୁଭାଷୀ ସରକାରୀ ସହାୟିକା", listening: "ଶୁଣୁଛି...", thinking: "ଭାବୁଛି...", ready: "ପ୍ରସ୍ତୁତ", transcript: "ଲାଇଭ୍ ଟ୍ରାନ୍ସକ୍ରିପ୍ଟ", placeholder: "କିଛି କୁହନ୍ତୁ...", response: "ଉତ୍ତର", defaultResponse: "କହିବା ଆରମ୍ਭ କରନ୍ତୁ..." },
+    "ur-IN": { title: "مایا", subtitle: "آپ کی کثیر لسانی سرکاری معاون", listening: "سن رہی ہوں...", thinking: "سوچ رہی ہوں...", ready: "تیار", transcript: "لائیو ٹرانسکرپٹ", placeholder: "کچھ بولیں...", response: "جواب", defaultResponse: "بولنا شروع کریں..." },
+    "as-IN": { title: "মায়া", subtitle: "আপোনাৰ বহুভাষিক চৰকাৰী সহায়িকা", listening: "শুনিছোঁ...", thinking: "ভাবি আছোঁ...", ready: "প্ৰস্তুত", transcript: "লাইভ ট্ৰান্সক্ৰিপ্ট", placeholder: "কিবা কওক...", response: "উত্তৰ", defaultResponse: "কবলৈ আৰম্ভ কৰক..." },
+    "mai-IN": { title: "माया", subtitle: "अहाँक बहुभाषी सरकारी सहायक", listening: "सुनि रहल छी...", thinking: "विचार कए रहल छी...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "किछु कहू...", response: "उत्तर", defaultResponse: "बाजव शुरू करू..." },
+    "bho-IN": { title: "माया", subtitle: "रउआ के बहुभाषी सरकारी सहायक", listening: "सुनत बानी...", thinking: "सोचत बानी...", ready: "तैयार बा", transcript: "लाइव प्रतिलेखन", placeholder: "कुछ बोलीं...", response: "जवाब", defaultResponse: "बोले के शुरू करीं..." },
+    "sa-IN": { title: "माया", subtitle: "भवतः बहुभाषिकः सरकारी सहायिका", listening: "शृणोमि...", thinking: "चिन्तयामि...", ready: "सज्जम्", transcript: "प्रत्यक्ष प्रतिलेखः", placeholder: "किमपि वदतु...", response: "उत्तरम्", defaultResponse: "वक्तुम् आरभत..." },
+    "kok-IN": { title: "माया", subtitle: "तुमची बहुभाषिक सरकारी सहायिका", listening: "आयकत आसां...", thinking: "विचार करता आसां...", ready: "तयार", transcript: "लाइव्ह ट्रान्सक्रिप्ट", placeholder: "काय तरी सांग...", response: "उत्तर", defaultResponse: "उलोवपाक सुरू करात..." },
+    "ne-IN": { title: "माया", subtitle: "तपाईंको बहुभाषिक सरकारी सहायक", listening: "सुन्दै छु...", thinking: "सोच्दै छु...", ready: "तयार", transcript: "लाइभ ट्रान्सक्रिप्ट", placeholder: "केही बोल्नुहोस्...", response: "उत्तर", defaultResponse: "बोल्न सुरु गर्नुहोस्..." },
+    "mni-IN": { title: "ꯃꯥꯌꯥ", subtitle: "Your multilingual government assistant", listening: "Listening...", thinking: "Thinking...", ready: "Ready", transcript: "Live Transcript", placeholder: "Speak something...", response: "Response", defaultResponse: "Start speaking..." },
+    "doi-IN": { title: "माया", subtitle: "तुहाडी बहुभाषी सरकारी सहायक", listening: "सुणी रही आं...", thinking: "सोची रही आं...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "कुज बोलो...", response: "जवाब", defaultResponse: "बोलना शुरू करो..." },
+    "sd-IN": { title: "مايا", subtitle: "توهان جي گهڻ ٻولي سرڪاري مددگار", listening: "ٻڌي رهي آهيان...", thinking: "سوچي رهي آهيان...", ready: "تيار", transcript: "لائيو ٽرانسڪرپٽ", placeholder: "ڪجهه ڳالهايو...", response: "جواب", defaultResponse: "ڳالهائڻ सुरू ڪريو..." },
+    "ks-IN": { title: "مایا", subtitle: "تُہند کثیر لسانی سرکاری معاون", listening: "سونان چھس...", thinking: "سوچان چھس...", ready: "تیار", transcript: "لائیو ٹرانسکرپٹ", placeholder: "کُجھ वनीव...", response: "جواب", defaultResponse: "شुरू करिव वनाุน..." }
   };
 
   const [languageSelected, setLanguageSelected] = useState(false);
@@ -78,6 +84,7 @@ export default function VoicePage() {
   const [suggestedPage, setSuggestedPage] = useState("");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -86,8 +93,9 @@ export default function VoicePage() {
   const silentTimerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioAnalyserRef = useRef<AnalyserNode | null>(null);
+  const isProcessing = useRef(false);
 
-  // 1. Safe Interactive Autoplay Enforcer Block
+  // 1. Autoplay Enforcer Block
   const playSystemWelcomeSpeech = useCallback(() => {
     window.speechSynthesis.cancel();
     const introText = "Welcome to JanMitra AI. For English press 1. हिंदी के लिए 2 दबाएं।";
@@ -98,18 +106,18 @@ export default function VoicePage() {
   }, []);
 
   useEffect(() => {
-    // Unlocks browser context upon clicking any item on landing view dashboard
     const handleInitialClick = () => {
-      if (!languageSelected) {
+      if (!hasInteracted && !languageSelected) {
+        setHasInteracted(true);
         playSystemWelcomeSpeech();
       }
       window.removeEventListener("click", handleInitialClick);
     };
     window.addEventListener("click", handleInitialClick);
     return () => window.removeEventListener("click", handleInitialClick);
-  }, [languageSelected, playSystemWelcomeSpeech]);
+  }, [hasInteracted, languageSelected, playSystemWelcomeSpeech]);
 
-  // 2. Continuous Voice Pipeline Handshake Trigger Loop
+  // 2. Continuous Voice Pipeline Loop
   const startConversationalEngine = async () => {
     if (currentAudioRef.current) currentAudioRef.current.pause();
     setMessage("");
@@ -119,7 +127,6 @@ export default function VoicePage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Setting up real-time amplitude checker arrays
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContextClass();
       audioContextRef.current = ctx;
@@ -139,7 +146,6 @@ export default function VoicePage() {
       recorder.start(100);
       setListening(true);
 
-      // Track relative silence duration values dynamically
       let lastVocalActivity = Date.now();
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
@@ -154,12 +160,11 @@ export default function VoicePage() {
         }
         const currentAmplitude = sum / bufferLength;
 
-        // Sound signal filter boundary context
         if (currentAmplitude > 12) {
           lastVocalActivity = Date.now();
         } else {
           const absoluteSilenceDuration = Date.now() - lastVocalActivity;
-          if (absoluteSilenceDuration > 4500) { // 4.5 seconds pause submission rule
+          if (absoluteSilenceDuration > 4500) {
             isProcessing.current = true;
             stopListeningAndSubmitData();
             return;
@@ -174,11 +179,9 @@ export default function VoicePage() {
       requestAnimationFrame(inspectAudioWaves);
 
     } catch (error) {
-      console.error("Microphone device context execution trace blocked:", error);
+      console.error("Microphone device block access error:", error);
     }
   };
-
-  const isProcessing = useRef(false);
 
   const stopListeningAndSubmitData = async () => {
     setListening(false);
@@ -190,7 +193,6 @@ export default function VoicePage() {
         setLoading(true);
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
 
-        // Multipart tracking construction block dispatched straight to your /api/stt engine
         const formData = new FormData();
         formData.append("audio", new File([audioBlob], "voice.webm", { type: "audio/webm" }));
         formData.append("language", language);
@@ -207,7 +209,6 @@ export default function VoicePage() {
 
         setMessage(transcriptText);
 
-        // Dispatches pure cleaned tracking variables right to the AI Chat Router
         const chatResponse = await axios.post("/api/chat", { message: transcriptText, language });
         const aiReply = chatResponse.data.reply;
         const aiIntent = chatResponse.data.intent;
@@ -222,7 +223,6 @@ export default function VoicePage() {
         };
         setSuggestedPage(routeMap[aiIntent] || "");
 
-        // Pipeline Voice Feed back tracking layer through premium Sarvam TTS
         const ttsResponse = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -241,7 +241,7 @@ export default function VoicePage() {
         }
 
       } catch (err) {
-        console.error("Voice matrix stream compilation error caught safely:", err);
+        console.error("Voice matrix loop processing error:", err);
         startConversationalEngine();
       } finally {
         setLoading(false);
@@ -254,19 +254,19 @@ export default function VoicePage() {
     recorder.stop();
   };
 
-  // 3. Play Selected Localized Confirmation Greetings via Sarvam TTS API
+  // 3. Localized Confirmation Greetings Player
   const triggerLocalizedGreetingConfirmation = async (selectedLang: string) => {
     window.speechSynthesis.cancel();
     
     const greetings: Record<string, string> = {
-      "en-US": "Hello. I am Maya, your multilingual assistant. How can I assist you today?",
-      "hi-IN": "नमस्ते। मैं माया हूँ, आपकी बहुभाषी सहायक। आज मैं आपकी कैसे सहायता कर सकती हूँ?",
-      "bn-IN": "নমস্কার। আমি মায়া, আপনার বহুভাষিক সরকারি সহকারী। আমি আপনাকে কীভাবে সাহায্য করতে পারি?"
+      "en-US": "English language activated. Maya is listening. Please ask your question now.",
+      "hi-IN": "जी हाँ, आपकी हिंदी भाषा सेट हो चुकी है। माया सक्रिय है, कृपया अपना प्रश्न पूछिए।",
+      "bn-IN": "বাংলা ভাষা সেট করা হয়েছে। মায়া সক্রিয় আছে, আপনার প্রশ্ন জিজ্ঞাসা করুন।"
     };
 
     try {
       const response = await axios.post("/api/tts", {
-        text: greetings[selectedLang] || "Hello",
+        text: greetings[selectedLang] || "Language activated",
         languageCode: selectedLang
       });
 
@@ -292,11 +292,19 @@ export default function VoicePage() {
 
   const forceStopAllStreams = () => {
     setListening(false);
-    if (silentCheckIntervalRef.current) clearInterval(silentCheckIntervalRef.current);
-    if (currentAudioRef.current) currentAudioRef.current.pause();
+    
+    if (silentTimerRef.current) {
+      clearTimeout(silentTimerRef.current);
+    }
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
+    
     setLanguageSelected(false);
     setMessage("");
     setReply("");
@@ -309,14 +317,14 @@ export default function VoicePage() {
   if (!languageSelected) {
     return (
       <main className="min-h-screen bg-[#050816] text-white flex items-center justify-center px-6 font-sans">
-        <div className="max-w-5xl w-full rounded-3xl border border-white/10 bg-white/5 p-10 backdrop-blur-2xl shadow-2xl relative">
+        <div className="max-w-5xl w-full rounded-3xl border border-white/10 bg-white/5 p-10 backdrop-blur-2xl shadow-2xl relative z-10">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
           
-          <h1 className="text-5xl font-black text-center tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-400">
+          <h1 className="text-4xl md:text-5xl font-black text-center tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-400">
             🇮🇳 JanMitra AI
           </h1>
-          <p className="text-center text-gray-400 mt-4 text-base">
-            Click directly or press numbers to select your language module setup instantly.
+          <p className="text-center text-gray-400 mt-4 text-sm md:text-base">
+            {!hasInteracted ? "Click anywhere to activate welcome context audio loop." : "Select your regional assistant core card module below."}
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
@@ -394,9 +402,12 @@ export default function VoicePage() {
               <span className="text-xs uppercase tracking-widest font-mono text-purple-400 font-bold">
                 {activeUI.transcript}
               </span>
-              <div className="w-full font-sans text-base leading-relaxed text-neutral-200 min-h-[90px] max-h-[120px] overflow-y-auto custom-scrollbar">
-                {message || activeUI.placeholder}
-              </div>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={activeUI.placeholder}
+                className="w-full bg-white/10 border border-white/10 rounded-2xl px-6 py-5 outline-none text-xl min-h-[160px] custom-scrollbar text-white resize-none"
+              />
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/30 p-6 flex flex-col gap-4 shadow-lg relative overflow-hidden">
