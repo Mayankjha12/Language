@@ -181,9 +181,7 @@ export default function AskAIPage() {
       formData.append("file", file);
 
       // Step 1: Trigger document upload router
-      const uploadRes = await axios.post("/api/document-upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      const uploadRes = await axios.post("/api/document-upload", formData);
 
       // Step 2: Fire analysis module passing language explicitly
       const analyzeRes = await axios.post("/api/document-analyze", { 
@@ -235,11 +233,6 @@ export default function AskAIPage() {
       btnClass: "bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)]",
     },
   ];
-
-  // Dynamic Variable Layout Translators
-  const langKey = schemeForm.language === "hindi" ? "hindi" : "english";
-  const dict = uiTranslationMap[langKey];
-  const statesArrayToRender = schemeForm.language === "hindi" ? indianStatesHi : indianStatesEn;
 
   return (
     <main className="min-h-screen bg-[#050816] text-white">
@@ -334,7 +327,6 @@ export default function AskAIPage() {
                       className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
                     />
                     
-                    {/* All Indian States Translated Local Dropdown */}
                     <select
                       name="state" value={schemeForm.state} onChange={handleSchemeChange}
                       className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
@@ -454,7 +446,6 @@ export default function AskAIPage() {
             {/* COMPLAINTS */}
             {activeTab === "complaints" && (
               <div className="grid lg:grid-cols-2 gap-6">
-                {/* LEFT SIDE PANEL: ASSISTANT CONSOLE */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                     <h2 className="text-2xl sm:text-3xl font-bold">
@@ -532,14 +523,12 @@ export default function AskAIPage() {
                   </button>
                 </div>
 
-                {/* RIGHT SIDE PANEL: AI OUTPUT GENERATION DISPLAY */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-6">
                     {language === "hindi" ? "एआई जनरेटेड शिकायत" : "AI Generated Complaint"}
                   </h2>
                   
                   <div className="space-y-4">
-                    {/* Department Router Card */}
                     <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
                       <h3 className="font-semibold mb-2 text-sm text-rose-300">
                         {language === "hindi" ? "संबंधित सरकारी विभाग (Target Department)" : "Target Government Department"}
@@ -547,7 +536,6 @@ export default function AskAIPage() {
                       <p className="text-white/80 font-medium text-sm">{department || (language === "hindi" ? "विभाग का नाम यहाँ दिखाई देगा" : "Department will appear here")}</p>
                     </div>
 
-                    {/* Complaint Draft Block */}
                     <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
                       <h3 className="font-semibold mb-3 text-sm text-rose-300">
                         {language === "hindi" ? "आधिकारिक पत्र प्रारूप (Official Legal Letter in English)" : "Official Complaint Letter Draft"}
@@ -557,7 +545,6 @@ export default function AskAIPage() {
                       </pre>
                     </div>
 
-                    {/* Clipboard Copy Button */}
                     {complaint && (
                       <button
                         onClick={() => {
@@ -579,7 +566,6 @@ export default function AskAIPage() {
                       {language === "hindi" ? "सीधे पीजी पोर्टल (PG Portal) पर सबमिट करें ↗" : "Submit on PG Portal ↗"}
                     </a>
 
-                    {/* Recommendation Track */}
                     <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
                       <h3 className="font-semibold mb-3 text-sm text-rose-300">
                         {language === "hindi" ? "महत्वपूर्ण निर्देश एवं अगले कदम" : "Actionable AI Steps & Recommendations"}
@@ -599,7 +585,7 @@ export default function AskAIPage() {
               </div>
             )}
 
-            {/* DOCUMENTS TAB - 100% FIXED & TESTED */}
+            {/* DOCUMENTS TAB - 100% ALIGNED AND FIXED */}
             {activeTab === "documents" && (
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* LEFT CONSOLE */}
@@ -619,7 +605,6 @@ export default function AskAIPage() {
                     </select>
                   </div>
 
-                  {/* Drag & Drop Input updates core file reference on selection change */}
                   <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-pointer relative">
                     <input 
                       type="file" 
@@ -645,14 +630,13 @@ export default function AskAIPage() {
                   </button>
                 </div>
 
-                {/* RIGHT CONSOLE - REFLECTS DYNAMIC INSIGHT PANELS */}
+                {/* RIGHT CONSOLE - INSIGHT RENDERING STRIPS */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-6">
                     {docLanguage === "hindi" ? "एआई सारांश" : "AI Summary"}
                   </h2>
 
                   <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
-                    {/* FIXED: Check explicitly targets analysisResult variable state data keys */}
                     {!analysisResult && !documentLoading && (
                       <p className="text-white/45 text-sm">
                         {docLanguage === "hindi" ? "विवरण देखने के लिए फ़ाइल अपलोड करें।" : "Upload a file to preview extracted metadata analysis logs."}
@@ -685,7 +669,10 @@ export default function AskAIPage() {
                           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
                             {docLanguage === "hindi" ? "आवश्यक दस्तावेज (Required Documents)" : "Required Documents"}
                           </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">{analysisResult.requiredDocs}</p>
+                          {/* FIXED: Hooks safely into layout keys regardless of string mutations from model */}
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult.requiredDocs || (analysisResult as any).required_documents || "No specific paperwork mentioned."}
+                          </p>
                         </div>
 
                         <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
