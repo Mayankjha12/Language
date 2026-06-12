@@ -652,6 +652,7 @@ export default function AskAIPage() {
                   </h2>
 
                   <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
+                    {/* FIXED: Check explicitly targets analysisResult variable state data keys */}
                     {!analysisResult && !documentLoading && (
                       <p className="text-white/45 text-sm">
                         {docLanguage === "hindi" ? "विवरण देखने के लिए फ़ाइल अपलोड करें।" : "Upload a file to preview extracted metadata analysis logs."}
@@ -721,7 +722,6 @@ export default function AskAIPage() {
                   {reply ? (
                     <div className="space-y-4">
                       <div className="text-sm bg-white/5 border border-white/10 p-4 rounded-xl max-w-[85%] ml-auto text-white/90">{message}</div>
-                      {/* FIXED: Directly prints the clean conversation text string hwere */}
                       <div className="text-sm bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl max-w-[85%] text-blue-200 whitespace-pre-wrap">{reply}</div>
                     </div>
                   ) : (
