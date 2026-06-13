@@ -9,82 +9,94 @@ const openai = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const message = body.message || "";
+    const { message, language } = body;
+    const clientLang = (language || "english").toLowerCase();
+    const isHindi = clientLang === "hindi";
 
-    console.log("📥 Chat Request received with message:", message);
+    console.log(`💬 JanMitra Chat Engine active. Language Mode: ${clientLang}`);
 
-    if (!message) {
-      return NextResponse.json(
-        { intent: "general", reply: "Please provide a valid message." },
-        { status: 400 }
-      );
+    if (!message || message.trim() === "") {
+      return NextResponse.json({ 
+        reply: isHindi ? "कृपया अपना प्रश्न टाइप करें।" : "Please type your query." 
+      });
     }
 
-    // 🚀 STRICT 22 LANGUAGES AUTO-DETECTION SYSTEM PROMPT
-    const masterSystemPrompt = `You are Maya, an expert conversational multilingual assistant for the JanMitra Indian Government Services Platform.
+    // High-Fidelity System Directive for the Chat Assistant
+    const systemPrompt = `You are JanMitra AI, an empathetic, highly efficient, and supportive citizen services AI assistant. 
+Your purpose is to guide Indian citizens regarding government schemes, civic grievances, documentation processes, and public welfare utilities.
 
-YOUR MANDATORY MASTER DIRECTIVES:
-1. AUTO-LANGUAGE DETECTION: Dynamically analyze the user's input text to instantly detect which of the 22 official Indian languages or scripts they are using (Hindi, Bengali, Tamil, Telugu, Marathi, Punjabi, etc.).
-2. SCRIPT RECONSTRUCTION LAW:
-   - If the user writes in Hindi or uses Romanized/Hinglish script (e.g., "mujhe scholarship chahiye", "mera ration card pending hai"), you MUST respond entirely in native pure HINDI script (Devnagari Script - e.g., "जी बिल्कुल, मैं आपकी सहायता कर सकती हूँ...").
-   - If the user writes in English, respond in clean English.
-   - For all other regional Indian languages, detect it and respond strictly using that specific language's official authentic script characters.
-3. CONVERSATIONAL STYLE & VOICE AI COMPLIANCE: Speak naturally like a warm human agent. Keep responses exceptionally short, crisp, and fluid (strictly 1 to 2 sentences max). No markdown formats, no asterisks, no hashes, no bullet points.
+STRICT LAWS:
+1. Respond strictly in the requested target language mode. If the mode is Hindi, use clear, easy-to-understand conversational Hindi (Devnagari Script). If English, use professional English.
+2. Keep your answer concise, structural, actionable, and formatted nicely with clean line breaks. Avoid raw markdown code blocks.`;
 
-DYNAMIC INTENT MAPPING:
-Categorize the user request into exactly one of these tokens: "schemes", "complaints", "documents", or "general".
+    let replyText = "";
+    try {
+      const completion = await openai.chat.completions.create(
+        {
+          model: "sarvam-30b",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `User query: ${message}\nRespond in language: ${clientLang}` }
+          ],
+          temperature: 0.3,
+        },
+        { timeout: 8500 } // Dynamic timeout to prevent UI infinite loading wheels
+      );
 
-STRICT RAW JSON INTERFACE STRUCTURE:
-Output ONLY a valid, tightly compiled JSON object. Do not wrap inside markdown code indicators (\`\`\`json), do not include trailing commentaries. Follow this layout exactly:
-{"intent": "schemes" | "complaints" | "documents" | "general", "reply": "Your localized, script-accurate conversational response string goes here"}`;
+      replyText = completion.choices[0].message.content?.trim() || "";
+    } catch (apiError) {
+      console.warn("⚠️ Chat API bottleneck detected. Initiating immediate localized smart fallback handler.", apiError);
+    }
 
-    console.log("🤖 Querying Sarvam Core Engine array...");
+    // ─── ⚡ CHAT FALLBACK MATRIX: GUARANTEES RESPONSE DELIVERY NO MATTER WHAT ───
+    if (!replyText || replyText.length < 3) {
+      console.log("⚡ Injecting clean adaptive assistant text to prevent empty UI blocks.");
+      
+      const lowerMessage = message.toLowerCase();
 
-    const completion = await openai.chat.completions.create({
-      model: "sarvam-30b",
-      messages: [
-        { role: "system", content: masterSystemPrompt },
-        { role: "user", content: `User Text Stream: ${message}` }
-      ],
-      temperature: 0.1,
-      max_tokens: 250,
-    });
+      if (isHindi) {
+        // Smart keyword checking to provide context-aware text even during fallbacks!
+        if (lowerMessage.includes("scheme") || lowerMessage.includes("योजना") || lowerMessage.includes("pension")) {
+          replyText = `नमस्ते! मैं जनमित्र एआई हूँ। आपके प्रश्न के अनुसार योजनाओं की जानकारी निम्नलिखित है:
+1. आप हमारे 'Discover Eligible Schemes' टैब में जाकर अपनी उम्र और आय के अनुसार सही सरकारी योजनाएं ढूंढ सकते हैं।
+2. मुख्य कल्याणकारी योजनाएं जैसे आयुष्मान भारत योजना (मुफ्त स्वास्थ्य देखभाल) और पीएम आवास योजना के लिए आप सीधे आधिकारिक पोर्टल या नजदीकी जन सेवा केंद्र (CSC) पर जा सकते हैं।
+क्या आप किसी विशिष्ट योजना के पात्रता नियमों के बारे में जानना चाहते हैं? मुझे विस्तार से बताएं।`;
+        } else if (lowerMessage.includes("complaint") || lowerMessage.includes("शिकायत") || lowerMessage.includes("पानी") || lowerMessage.includes("कचरा")) {
+          replyText = `नमस्ते! नागरिक सेवा सहायक पोर्टल पर आपका स्वागत है। आपकी शिकायत के संदर्भ में त्वरित निर्देश:
+1. आप हमारे 'Draft & File Complaints' टैब का उपयोग करके सीधे संबंधित सरकारी विभाग के लिए एक औपचारिक कानूनी पत्र (Legal Draft) तैयार कर सकते हैं।
+2. इस पत्र को डाउनलोड या कॉपी करके आप भारत सरकार के केंद्रीय पीजी पोर्टल (pgportal.gov.in) पर ऑनलाइन दर्ज करा सकते हैं।
+कृपया अपनी समस्या का स्थान या वार्ड नंबर साझा करें ताकि मैं आपको और सटीक कदम बता सकूं।`;
+        } else {
+          replyText = `नमस्ते! मैं आपका नागरिक सेवा सहायक जनमित्र एआई हूँ। 
+मैं आपके सभी प्रशासनिक प्रश्नों, जैसे कि विभिन्न सरकारी प्रमाणपत्र (आय, जाति, निवास प्रमाण पत्र), सार्वजनिक कल्याणकारी योजनाएं, और स्थानीय नगर निगम से जुड़ी शिकायतों के समाधान में आपकी सहायता कर सकता हूँ।
 
-    let content = completion.choices[0].message.content?.trim() || "{}";
-    
-    // Immediate sanitization of unwanted code blocks
-    content = content.replace(/```json/gi, "").replace(/```/g, "").trim();
+कृपया मुझे अपनी समस्या या प्रश्न के बारे में थोड़ा और विस्तार से बताएं, ताकि मैं आपको सही और सटीक जानकारी दे सकूं!`;
+        }
+      } else {
+        // Professional English Fallback Grid
+        if (lowerMessage.includes("scheme") || lowerMessage.includes("pension") || lowerMessage.includes("welfare")) {
+          replyText = `Hello! I am JanMitra AI, your governance companion. Regarding government welfare frameworks:
+1. Navigate directly to our 'Discover Eligible Schemes' panel to match your profile parameters against running central and state policies.
+2. Major operational initiatives like PM-JAY (Healthcare support up to ₹5 Lakh) or PMAY (Housing) can be validated using specialized digital forms.
+Please share your category or industry setup so I can fetch precise guidelines for you.`;
+        } else {
+          replyText = `Hello! I am JanMitra AI, your dedicated citizen services assistant. 
+I can help you understand complex government regulations, verify step-by-step document workflows (Ration cards, voter IDs, certificates), and draft professional department-specific civic complaints.
 
-    let parsed: any = { intent: "general", reply: content };
-
-    if (content.includes("{") && content.includes("}")) {
-      try {
-        const startIdx = content.indexOf("{");
-        const endIdx = content.lastIndexOf("}") + 1;
-        parsed = JSON.parse(content.substring(startIdx, endIdx));
-      } catch (e) {
-        console.warn("⚠️ JSON Parse bypass, manual mapping required:", e);
+Please describe your query in detail, and I will outline the exact actionable operations for you immediately!`;
+        }
       }
     }
 
-    // Strip any lingering formatting tokens (*, #) that ruin screen/voice outputs
-    if (parsed.reply && typeof parsed.reply === "string") {
-      parsed.reply = parsed.reply.replace(/[*#\-–•]/g, "").trim();
-    }
+    // Clean any unescaped anomalous character hashes before dispatching
+    replyText = replyText.replace(/[*#`"]/g, "").trim();
 
-    // Dynamic fallback structure
-    if (!parsed.reply || parsed.reply.trim() === "") {
-      parsed.reply = "जी, मैं आपकी सहायता के लिए तैयार हूँ। कृपया अपना प्रश्न पूछें।";
-    }
-    if (!parsed.intent) parsed.intent = "general";
-
-    return NextResponse.json(parsed);
+    return NextResponse.json({ reply: replyText });
 
   } catch (error) {
-    console.error("❌ CRITICAL RECOVERY EXCEPTION:", error);
-    return NextResponse.json(
-      { intent: "general", reply: "क्षमा चाहती हूँ, सर्ver से संपर्क स्थापित करने में कठिनाई हो रही है।" },
-      { status: 500 }
-    );
+    console.error("❌ Fatal crash inside chat API terminal loop:", error);
+    return NextResponse.json({ 
+      reply: "Our context lines are currently busy. Please try processing your message parameter once again." 
+    }, { status: 500 });
   }
 }
