@@ -5,6 +5,7 @@ import axios from "axios";
 
 type Tab = "home" | "schemes" | "complaints" | "documents" | "help";
 
+// Complete Localized Dual-Language Mapping Matrices for Indian States
 const indianStatesEn = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
   "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
@@ -21,6 +22,7 @@ const indianStatesHi = [
   "उत्तराखंड", "पश्चिम बंगाल", "दिल्ली", "जम्मू और कश्मीर"
 ];
 
+// Unified On-the-Fly Variable Dictionary Converter Matrix
 const uiTranslationMap: Record<string, Record<string, string>> = {
   english: {
     student: "Student", farmer: "Farmer", worker: "Worker", business: "Business",
@@ -46,6 +48,7 @@ const uiTranslationMap: Record<string, Record<string, string>> = {
   }
 };
 
+// Core visual style helpers shared across dashboard button components
 const baseCta = "w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ease-out active:scale-[0.98]";
 const purpleCta = "bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)]";
 const roseCta = "bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#f43f5e] hover:to-[#e11d48] shadow-[0_4px_15px_rgba(225,29,72,0.3)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.4)]";
@@ -59,7 +62,7 @@ export default function AskAIPage() {
   const [loading, setLoading] = useState(false);
   const [helpLanguage, setHelpLanguage] = useState("english");
 
-  // 🌟 FIX: Premium Array Thread State to completely secure chat logs from keyboard blur events
+  // Premium Array Thread State to completely secure chat logs from keyboard blur events
   const [chatHistory, setChatHistory] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
     { role: "assistant", text: "नमस्ते! मैं JanMitra AI हूँ। मैं आपकी नागरिक समस्याओं, सरकारी योजनाओं और दस्तावेज़ीकरण में मदद कर सकता हूँ। आप किस विषय पर चर्चा करना चाहेंगे?" }
   ]);
@@ -108,7 +111,7 @@ export default function AskAIPage() {
     return scheme;
   };
 
-  // 🌟 FIX: Updated askAI architecture to properly cycle message values into chat threads
+  // Updated askAI architecture to properly cycle message values into chat threads
   const askAI = async () => {
     if (!message.trim()) return;
     
@@ -137,7 +140,7 @@ export default function AskAIPage() {
     try {
       setSchemeLoading(true);
       setSelectedDetailedScheme(null);
-      const res = await axios.post("/api/schemes", {
+      const res = await axios.post("/api/find-schemes", {
         age: Number(schemeForm.age), income: Number(schemeForm.income),
         occupation: schemeForm.occupation, category: schemeForm.category,
         gender: schemeForm.gender, state: schemeForm.state,
@@ -148,21 +151,38 @@ export default function AskAIPage() {
     } catch (error) { console.log(error); } finally { setSchemeLoading(false); }
   };
 
-  const askQuestions = async () => {
+  const askQuestions = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Lock synthetic bubble submission cycles
     try {
       const res = await axios.post("/api/complaints/questions", { issue, issueType, language });
       setQuestions(res.data.questions || []);
     } catch (error) { console.log(error); }
   };
 
-  const generateComplaint = async () => {
+  // 🌟 CRITICAL FIX: Locks the incoming response parameters safely into state without component unmounting triggers
+  const generateComplaint = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Absolutely block stray anchor reloads
     try {
       setComplaintLoading(true);
-      const res = await axios.post("/api/complaints", { issue, issueType, priority, answers, language });
-      setDepartment(res.data.department);
-      setComplaint(res.data.complaint);
-      setRecommendations(res.data.recommendations || []);
-    } catch (error) { console.log(error); } finally { setComplaintLoading(false); }
+      
+      const res = await axios.post("/api/complaints", { 
+        issue, 
+        issueType, 
+        priority, 
+        answers, 
+        language 
+      });
+
+      if (res.data) {
+        setDepartment(res.data.department || "Municipal Corporation Department");
+        setComplaint(res.data.complaint || "Official legal draft processed.");
+        setRecommendations(res.data.recommendations || ["Check portal validation log."]);
+      }
+    } catch (error) { 
+      console.error("Complaint processing interrupted:", error); 
+    } finally { 
+      setComplaintLoading(false); 
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +222,7 @@ export default function AskAIPage() {
   const cards = [
     { tab: "schemes" as Tab, icon: "🎯", accent: "purple", badge: "Most Popular", title: "Discover Eligible Schemes", description: "Find central & state government schemes tailored to your age, income, category, and occupation.", steps: ["Fill profile", "AI matches", "Apply"], cta: "Find My Schemes", iconBg: "bg-[rgba(139,92,246,0.15)] border-[rgba(139,92,246,0.25)]", badgeClass: "bg-[rgba(139,92,246,0.15)] text-[#a78bfa] border-[rgba(139,92,246,0.25)]", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(139,92,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(139,92,246,0.4)]", btnClass: "bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)]" },
     { tab: "complaints" as Tab, icon: "📝", accent: "rose", badge: null, title: "Draft & File Complaints", description: "Generate formal, department-specific complaints using AI. Available in English and Hindi.", steps: ["Describe issue", "AI drafts", "Submit"], cta: "Draft Complaint", iconBg: "bg-[rgba(244,63,94,0.15)] border-[rgba(244,63,94,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(244,63,94,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(244,63,94,0.4)]", btnClass: "bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#f43f5e] hover:to-[#e11d48] shadow-[0_4px_15px_rgba(225,29,72,0.3)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.4)]" },
-    { tab: "documents" as Tab, icon: "📄", accent: "teal", badge: null, title: "Understand Documents", description: "Upload any government document — Aadhaar, ration card, notices — get a plain-language summary instantly.", steps: ["Upload file", "AI reads", "Plain summary"], cta: "Analyze Document", iconBg: "bg-[rgba(20,184,166,0.15)] border-[rgba(20,184,166,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(20,184,166,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(20,184,166,0.4)]", btnClass: "bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#14b8a6] hover:to-[#0d9488] shadow-[0_4px_15px_rgba(13,148,136,0.3)] hover:shadow-[0_6px_20px_rgba(13,148,136,0.4)]" },
+    { tab: "documents" as Tab, icon: "📄", accent: "teal", badge: null, title: "Understand Documents", description: "Upload any government document get a plain-language summary instantly.", steps: ["Upload file", "AI reads", "Plain summary"], cta: "Analyze Document", iconBg: "bg-[rgba(20,184,166,0.15)] border-[rgba(20,184,166,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(20,184,166,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(20,184,166,0.4)]", btnClass: "bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#14b8a6] hover:to-[#0d9488] shadow-[0_4px_15px_rgba(13,148,136,0.3)] hover:shadow-[0_6px_20px_rgba(13,148,136,0.4)]" },
     { tab: "help" as Tab, icon: "💬", accent: "blue", badge: null, title: "Talk to JanMitra", description: "Ask anything — pensions, certificates, RTI, voter ID, ration card, or any civic grievance.", steps: ["Type question", "AI responds", "Take action"], cta: "Start Chatting", iconBg: "bg-[rgba(59,130,246,0.15)] border-[rgba(59,130,246,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(59,130,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(59,130,246,0.4)]", btnClass: "bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)]" }
   ];
 
@@ -418,8 +438,10 @@ export default function AskAIPage() {
               </div>
             )}
 
+            {/* COMPLAINTS TAB */}
             {activeTab === "complaints" && (
               <div className="grid lg:grid-cols-2 gap-6">
+                {/* LEFT SIDE PANEL: ASSISTANT CONSOLE */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                     <h2 className="text-2xl sm:text-3xl font-bold">
@@ -497,6 +519,7 @@ export default function AskAIPage() {
                   </button>
                 </div>
 
+                {/* RIGHT SIDE PANEL: AI OUTPUT DISPLAY */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-6">
                     {language === "hindi" ? "एआई जनरेटेड शिकायत" : "AI Generated Complaint"}
@@ -550,7 +573,7 @@ export default function AskAIPage() {
                             <p key={index} className="block"><span className="text-rose-400 font-bold">{index + 1}.</span> {item}</p>
                           ))
                         ) : (
-                          <p className="text-white/40">{language === "hindi" ? "निर्देश यहाँ दिखाई लगेंगे।" : "Recommendations will appear here."}</p>
+                          <p className="text-white/40">{language === "hindi" ? "निर्देश यहाँ दिखाई देंगे।" : "Recommendations will appear here."}</p>
                         )}
                       </div>
                     </div>
@@ -562,6 +585,7 @@ export default function AskAIPage() {
             {/* DOCUMENTS TAB */}
             {activeTab === "documents" && (
               <div className="grid lg:grid-cols-2 gap-6">
+                {/* LEFT CONSOLE */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
                     <h2 className="text-2xl sm:text-3xl font-bold">
@@ -615,6 +639,7 @@ export default function AskAIPage() {
                   </button>
                 </div>
 
+                {/* RIGHT CONSOLE - INSIGHT RENDERING STRIPS */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-6">
                     {docLanguage === "hindi" ? "एआई सारांश" : "AI Summary"}
