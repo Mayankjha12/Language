@@ -204,11 +204,20 @@ export default function AskAIPage() {
 
       const uploadRes = await axios.post("/api/document-upload", formData);
 
+      // YAHAN PAR 'language: docLanguage' add karna hai
       const analyzeRes = await axios.post("/api/document-analyze", { 
         documentText: uploadRes.data.text, 
         language: docLanguage 
       });
 
+      setAnalysisResult(analyzeRes.data);
+    } catch (error) { 
+      console.log(error); 
+      alert(docLanguage === "hindi" ? "विश्लेषण विफल रहा" : "Analysis failed");
+    } finally { 
+      setDocumentLoading(false); 
+    }
+  };
       // 🌟 STABLE VALUE CAPTURE: Normalizes object parsing structure safely
       setAnalysisResult(analyzeRes.data);
     } catch (error) { 
