@@ -115,10 +115,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { documentText, language } = body;
-    // language variable mein "english" ya "hindi" aa raha hai
     const targetLang = (language || "english").toLowerCase();
 
-    // System prompt ko dynamic banaya taaki AI user ki language choice respect kare
     const systemPrompt = `You are JanMitra AI. Analyze the document and return a JSON object.
     RULES:
     1. Everything (purpose, dates, requiredDocs, actions, summary) MUST be in the requested language: ${targetLang}.
@@ -138,8 +136,10 @@ export async function POST(req: Request) {
     });
 
     let outputText = completion.choices[0].message.content?.trim() || "{}";
-    outputText = outputText.replace(/```json|
-```/g, "").trim();
+    
+    // FIX: Regex ko ek hi line mein likha gaya hai
+    outputText = outputText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
@@ -150,6 +150,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
-
-
 
