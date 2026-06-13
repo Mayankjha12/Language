@@ -4,14 +4,24 @@ import { useState } from "react";
 import axios from "axios";
 
 export default function SchemesPage() {
-  const [form, setForm] = useState({
+  interface FormState {
+    age: string;
+    occupation: string;
+    income: string;
+    category: string;
+    gender: string;
+    state: string;
+    language: "english" | "hindi";
+  }
+
+  const [form, setForm] = useState<FormState>({
     age: "",
-    income: "",
     occupation: "",
+    income: "",
     category: "",
     gender: "",
     state: "",
-    language: "english" // Tracks local dynamic selection natively
+    language: "english"
   });
 
   const [schemes, setSchemes] = useState<any[]>([]);
@@ -19,24 +29,37 @@ export default function SchemesPage() {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const name = e.target.name as keyof FormState;
+    const value = e.target.value;
+
+    const updatedForm = { ...form, [name]: value } as FormState;
+
+    // Clear income if occupation is set to student
+    if (name === "occupation" && value === "student") {
+      updatedForm.income = "";
+    }
+
+    setForm(updatedForm);
   };
 
   const findSchemes = async () => {
     try {
       setLoading(true);
-      const res = await axios.post("/api/schemes", {
+      const payload: Record<string, any> = {
         age: Number(form.age),
-        income: Number(form.income),
         occupation: form.occupation,
         category: form.category,
         gender: form.gender,
         state: form.state,
         language: form.language // Forwarded safely to backend mapping route
-      });
+      };
+
+      // Only include income when provided and not a student
+      if (form.income && form.occupation !== "student") {
+        payload.income = Number(form.income);
+      }
+
+      const res = await axios.post("/api/schemes", payload);
 
       setSchemes(res.data.schemes || []);
       setAiExplanation(res.data.aiExplanation || "");
@@ -65,81 +88,110 @@ export default function SchemesPage() {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
             <h2 className="text-2xl font-semibold mb-8">Quick Profile</h2>
             <div className="space-y-5">
-              
-              <input
-                type="number"
-                name="age"
-                placeholder="Age"
-                value={form.age}
-                onChange={handleChange}
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
-              />
 
-              <input
-                type="number"
-                name="income"
-                placeholder="Annual Income"
-                value={form.income}
-                onChange={handleChange}
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
-              />
+              <div className="flex items-center gap-4">
+                <label htmlFor="age" className="w-32 text-sm font-semibold text-gray-300">AGE :</label>
+                <input
+                  id="age"
+                  type="number"
+                  name="age"
+                  placeholder="Age"
+                  value={form.age}
+                  onChange={handleChange}
+                  className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
+                />
+              </div>
 
-              <input
-                type="text"
-                name="state"
-                placeholder="State"
-                value={form.state}
-                onChange={handleChange}
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
-              />
+              <div className="flex items-center gap-4">
+                <label htmlFor="state" className="w-32 text-sm font-semibold text-gray-300">STATE :</label>
+                <input
+                  id="state"
+                  type="text"
+                  name="state"
+                  placeholder="State"
+                  value={form.state}
+                  onChange={handleChange}
+                  className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
+                />
+              </div>
 
-              <select
-                name="occupation"
-                value={form.occupation}
-                onChange={handleChange}
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
-              >
-                <option value="">Select Occupation</option>
-                <option value="student">Student</option>
-                <option value="farmer">Farmer</option>
-                <option value="worker">Worker</option>
-                <option value="business">Business</option>
-              </select>
+              <div className="flex items-center gap-4">
+                <label htmlFor="occupation" className="w-32 text-sm font-semibold text-gray-300">OCCUPATION :</label>
+                <select
+                  id="occupation"
+                  name="occupation"
+                  value={form.occupation}
+                  onChange={handleChange}
+                  className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
+                >
+                  <option value="">Select Occupation</option>
+                  <option value="student">Student</option>
+                  <option value="farmer">Farmer</option>
+                  <option value="worker">Worker</option>
+                  <option value="business">Business</option>
+                </select>
+              </div>
 
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
-              >
-                <option value="">Category</option>
-                <option value="general">General</option>
-                <option value="obc">OBC</option>
-                <option value="sc">SC</option>
-                <option value="st">ST</option>
-              </select>
+              {form.occupation !== "student" && (
+                <div className="flex items-center gap-4">
+                  <label htmlFor="income" className="w-32 text-sm font-semibold text-gray-300">ANNUAL INCOME :</label>
+                  <input
+                    id="income"
+                    type="number"
+                    name="income"
+                    placeholder="Annual Income"
+                    value={form.income}
+                    onChange={handleChange}
+                    className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
+                  />
+                </div>
+              )}
 
-              <select
-                name="gender"
-                value={form.gender}
-                onChange={handleChange}
-                className="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
-              >
-                <option value="">Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
+              <div className="flex items-center gap-4">
+                <label htmlFor="category" className="w-32 text-sm font-semibold text-gray-300">CATEGORY :</label>
+                <select
+                  id="category"
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
+                >
+                  <option value="">Category</option>
+                  <option value="general">General</option>
+                  <option value="obc">OBC</option>
+                  <option value="sc">SC</option>
+                  <option value="st">ST</option>
+                </select>
+              </div>
 
-              {/* Seamlessly injects language options mapping inline inside card panel layout blocks */}
-              <select
-                name="language"
-                value={form.language}
-                onChange={handleChange}
-                className="w-full bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-xl px-5 py-4 outline-none font-semibold"
-              >
-                <option value="english">Output Explanation: English</option>
-                <option value="hindi">आउटपुट स्पष्टीकरण: हिंदी</option>
-              </select>
+              <div className="flex items-center gap-4">
+                <label htmlFor="gender" className="w-32 text-sm font-semibold text-gray-300">GENDER :</label>
+                <select
+                  id="gender"
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                  className="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none"
+                >
+                  <option value="">Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label htmlFor="language" className="w-32 text-sm font-semibold text-gray-300">LANGUAGE :</label>
+                <select
+                  id="language"
+                  name="language"
+                  value={form.language}
+                  onChange={handleChange}
+                  className="flex-1 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-xl px-5 py-4 outline-none font-semibold"
+                >
+                  <option value="english">Output Explanation: English</option>
+                  <option value="hindi">आउटपुट स्पष्टीकरण: हिंदी</option>
+                </select>
+              </div>
 
               <button
                 onClick={findSchemes}

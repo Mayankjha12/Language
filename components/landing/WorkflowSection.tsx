@@ -11,10 +11,10 @@ const steps = [
 
 export default function WorkflowSection() {
   return (
-    <section className="px-6 py-28 max-w-7xl mx-auto">
+    <section className="px-6 py-10 mb-5 max-w-7xl mx-auto">
 
       {/* Heading */}
-      <div className="text-center mb-20">
+      <div className="text-center mb-10">
 
         <h2
           className="

@@ -25,26 +25,42 @@ const indianStatesHi = [
 // Unified On-the-Fly Variable Dictionary Converter Matrix
 const uiTranslationMap: Record<string, Record<string, string>> = {
   english: {
+    ageLabel: "AGE",
+    occupationLabel: "OCCUPATION",
+    incomeLabel: "ANNUAL INCOME",
+    stateLabel: "STATE",
+    categoryLabel: "CATEGORY",
+    genderLabel: "GENDER",
     student: "Student", farmer: "Farmer", worker: "Worker", business: "Business",
     general: "General", obc: "OBC", sc: "SC", st: "ST",
     male: "Male", female: "Female", selectState: "Select State",
-    occupationPlaceholder: "Occupation", categoryPlaceholder: "Category", genderPlaceholder: "Gender",
+    occupationPlaceholder: "Choose occupation", categoryPlaceholder: "Choose category", genderPlaceholder: "Choose gender",
+    agePlaceholder: "Enter age", incomePlaceholder: "Enter annual income",
     benefitsHeading: "Benefits", documentsHeading: "Required Documents",
     ayushmanTitle: "Ayushman Bharat PM-JAY", ayushmanDesc: "Provides free healthcare coverage up to ₹5 lakh per family annually.",
     pmAwasTitle: "PM Awas Yojana", pmAwasDesc: "Affordable housing assistance for low-income families.",
     scholarshipTitle: "National Scholarship Portal", scholarshipDesc: "Scholarship support for eligible students.",
-    atalTitle: "Atal Pension Yojana", atalDesc: "Guaranteed pension scheme for citizens."
+    atalTitle: "Atal Pension Yojana", atalDesc: "Guaranteed pension scheme for citizens.",
+    requiredMsg: "This field is required"
   },
   hindi: {
+    ageLabel: "उम्र (AGE)",
+    occupationLabel: "व्यवसाय (OCCUPATION)",
+    incomeLabel: "वार्षिक आय (ANNUAL INCOME)",
+    stateLabel: "राज्य (STATE)",
+    categoryLabel: "श्रेणी (CATEGORY)",
+    genderLabel: "लिंग (GENDER)",
     student: "छात्र", farmer: "किसान", worker: "मजदूर", business: "व्यापार / व्यवसाय",
     general: "सामान्य (General)", obc: "ओबीसी (OBC)", sc: "अनुसूचित जाति (SC)", st: "अनुसूचित जनजाति (ST)",
     male: "पुरुष", female: "महिला", selectState: "राज्य का चयन करें",
     occupationPlaceholder: "व्यवसाय चुनें", categoryPlaceholder: "श्रेणी चुनें", genderPlaceholder: "लिंग चुनें",
+    agePlaceholder: "उम्र दर्ज करें", incomePlaceholder: "वार्षिक आय दर्ज करें",
     benefitsHeading: "योजना के लाभ", documentsHeading: "आवश्यक दस्तावेज",
     ayushmanTitle: "आयुष्मान भारत प्रधानमंत्री जन आरोग्य योजना (PM-JAY)", ayushmanDesc: "प्रति परिवार प्रति वर्ष ₹5 lakh तक का मुफ्त स्वास्थ्य कवरेज प्रदान करता है।",
     pmAwasTitle: "प्रधानमंत्री आवास योजना (PMAY)", pmAwasDesc: "कम आय वाले परिवारों के लिए किफायती आवास सहायता।",
     scholarshipTitle: "राष्ट्रीय छात्रवृत्ति पोर्टल (NSP)", scholarshipDesc: "योग्य और मेधावी छात्रों के लिए वित्तीय शैक्षणिक सहायता।",
-    atalTitle: "अटल पेंशन योजना (APY)", atalDesc: "असंगठित क्षेत्र के नागरिकों के लिए गारंटीकृत मासिक पेंशन योजना।"
+    atalTitle: "अटल पेंशन योजना (APY)", atalDesc: "असंगठित क्षेत्र के नागरिकों के लिए गारंटीकृत मासिक पेंशन योजना।",
+    requiredMsg: "यह फ़ील्ड आवश्यक है"
   }
 };
 
@@ -70,6 +86,16 @@ export default function AskAIPage() {
     age: "", income: "", occupation: "", category: "", gender: "", state: "",
     language: "english"
   });
+
+  // Target submission error state tracing matrix for validation loops
+  const [formErrors, setFormErrors] = useState({
+    age: false,
+    occupation: false,
+    state: false,
+    category: false,
+    gender: false
+  });
+
   const [schemes, setSchemes] = useState<any[]>([]);
   const [schemeLoading, setSchemeLoading] = useState(false);
   const [aiExplanation, setAiExplanation] = useState("");
@@ -121,27 +147,48 @@ export default function AskAIPage() {
     setLoading(true);
 
     try {
-      // Yeh line ab sahi kaam karegi kyunki import fix kar diya hai
       const res = await axios.post("/api/chat", { message: userQuery });
       setChatHistory(prev => [...prev, { role: "assistant", text: res.data.reply }]);
     } catch (error) {
       console.log(error);
-      setChatHistory(prev => [...prev, { role: "assistant", text: "Error connecting to AI." }]);
+      setChatHistory(prev => [...prev, { role: "assistant", text: "सिस्टम कनेक्शन त्रुटि। कृपया पुनः प्रयास करें।" }]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSchemeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setSchemeForm({ ...schemeForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setSchemeForm({ ...schemeForm, [name]: value });
+    
+    // Smooth dynamic structural reset for specific input field validation borders on keypress
+    if (name in formErrors) {
+      setFormErrors(prev => ({ ...prev, [name]: value.trim() === "" }));
+    }
   };
 
   const findSchemes = async () => {
+    // Structural client validation routine targeting everything EXCEPT income parameter values
+    const errors = {
+      age: schemeForm.age.trim() === "",
+      occupation: schemeForm.occupation.trim() === "",
+      state: schemeForm.state.trim() === "",
+      category: schemeForm.category.trim() === "",
+      gender: schemeForm.gender.trim() === ""
+    };
+
+    setFormErrors(errors);
+
+    const hasErrors = Object.values(errors).some(Boolean);
+    if (hasErrors) {
+      return; 
+    }
+
     try {
       setSchemeLoading(true);
       setSelectedDetailedScheme(null);
       const res = await axios.post("/api/schemes", {
-        age: Number(schemeForm.age), income: Number(schemeForm.income),
+        age: Number(schemeForm.age), income: schemeForm.income ? Number(schemeForm.income) : null,
         occupation: schemeForm.occupation, category: schemeForm.category,
         gender: schemeForm.gender, state: schemeForm.state,
         language: schemeForm.language
@@ -209,6 +256,7 @@ export default function AskAIPage() {
         language: docLanguage 
       });
 
+      // 🌟 STABLE VALUE CAPTURE: Normalizes object parsing structure safely
       setAnalysisResult(analyzeRes.data);
     } catch (error) { 
       console.log(error); 
@@ -236,17 +284,21 @@ export default function AskAIPage() {
         {/* Hero */}
         <div className="relative rounded-3xl border border-[rgba(139,92,246,0.25)] bg-gradient-to-br from-[rgba(139,92,246,0.08)] to-[rgba(59,130,246,0.05)] p-8 sm:p-10 overflow-hidden">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(139,92,246,0.12)_0%,transparent_60%)]" />
-          <div className="relative">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(139,92,246,0.3)] bg-[rgba(139,92,246,0.15)] px-3.5 py-1.5 text-xs font-medium text-[#a78bfa] tracking-wide mb-5">
-              <span className="pulse-dot inline-block w-1.5 h-1.5 rounded-full bg-[#a78bfa]" />
-              AI-Powered Governance Assistant
-            </span>
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-white via-white to-[#a78bfa] bg-clip-text text-transparent leading-tight">
-              Ask JanMitra AI
-            </h1>
-            <p className="text-white/50 mt-4 text-base sm:text-lg max-w-xl leading-relaxed">
-              One intelligent assistant for schemes, complaints, documents and governance support — powered by AI.
-            </p>
+          <div className="relative flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-white via-white to-[#a78bfa] bg-clip-text text-transparent leading-tight">
+                Ask JanMitra AI
+              </h1>
+              <p className="text-white/50 mt-4 text-base sm:text-lg max-w-xxl leading-relaxed">
+                One intelligent assistant for schemes, complaints, documents and governance support — powered by AI.
+              </p>
+            </div>
+            <button
+              onClick={() => { setActiveTab("home"); setSelectedDetailedScheme(null); }}
+              className={`px-6 py-3 ${ghostBtn} flex items-center gap-2 text-sm whitespace-nowrap ml-4`}
+            >
+              ← {schemeForm.language === "hindi" ? "मुख्य पृष्ठ" : "Back to Home"}
+            </button>
           </div>
         </div>
 
@@ -254,8 +306,7 @@ export default function AskAIPage() {
         {activeTab === "home" && (
           <>
             <div className="mt-10 text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold">How can I help you today?</h2>
-              <p className="text-white/45 mt-3 text-sm">Choose a task · A guided form will open instantly</p>
+            
             </div>
             <div className="grid md:grid-cols-2 gap-4 mt-10">
               {cards.map((card) => (
@@ -280,12 +331,6 @@ export default function AskAIPage() {
         {/* INNER PAGE CONSOLES */}
         {activeTab !== "home" && (
           <div className="mt-10">
-            <button
-              onClick={() => { setActiveTab("home"); setSelectedDetailedScheme(null); }}
-              className={`mb-6 px-6 py-3 ${ghostBtn} flex items-center gap-2 text-sm`}
-            >
-              ← {schemeForm.language === "hindi" ? "मुख्य पृष्ठ" : "Back to Home"}
-            </button>
 
             {/* SCHEMES PAGE PANELS */}
             {activeTab === "schemes" && (
@@ -303,67 +348,125 @@ export default function AskAIPage() {
                       <option value="hindi">हिंदी फॉर्म</option>
                     </select>
                   </div>
-                  <div className="space-y-4">
-                    <input
-                      type="number" 
-                      name="age" 
-                      placeholder={schemeForm.language === "hindi" ? "उम्र (Age)" : "Age"} 
-                      value={schemeForm.age} 
-                      onChange={handleSchemeChange}
-                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-                    />
+                  <div className="space-y-5">
+                    {/* AGE FIELD */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center w-full">
+                      <span className="text-sm font-semibold tracking-wide text-white/70 uppercase md:col-span-1">
+                        {dict.ageLabel} :
+                      </span>
+                      <div className="md:col-span-2 w-full">
+                        <input
+                          type="number" 
+                          name="age" 
+                          placeholder={dict.agePlaceholder} 
+                          value={schemeForm.age} 
+                          onChange={handleSchemeChange}
+                          className={`w-full bg-white/[0.05] border ${formErrors.age ? "border-red-500 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]" : "border-white/[0.08] focus:border-[rgba(139,92,246,0.5)]"} rounded-xl px-5 py-4 outline-none text-white transition-all duration-200`}
+                        />
+                        {formErrors.age && <p className="text-red-500 text-xs mt-1.5 ml-1">{dict.requiredMsg}</p>}
+                      </div>
+                    </div>
 
-                    <input
-                      type="number" 
-                      name="income" 
-                      placeholder={schemeForm.language === "hindi" ? "वार्षिक आय (Annual Income)" : "Annual Income"} 
-                      value={schemeForm.income} 
-                      onChange={handleSchemeChange}
-                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-                    />
+                    {/* OCCUPATION FIELD */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center w-full">
+                      <span className="text-sm font-semibold tracking-wide text-white/70 uppercase md:col-span-1">
+                        {dict.occupationLabel} :
+                      </span>
+                      <div className="md:col-span-2 w-full">
+                        <select
+                          name="occupation" value={schemeForm.occupation} onChange={handleSchemeChange}
+                          className={`w-full bg-white/[0.05] border ${formErrors.occupation ? "border-red-500 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]" : "border-white/[0.08] focus:border-[rgba(139,92,246,0.5)]"} rounded-xl px-5 py-4 outline-none text-white transition-all duration-200`}
+                        >
+                          <option value="">{dict.occupationPlaceholder}</option>
+                          <option value="student">{dict.student}</option>
+                          <option value="farmer">{dict.farmer}</option>
+                          <option value="worker">{dict.worker}</option>
+                          <option value="business">{dict.business}</option>
+                        </select>
+                        {formErrors.occupation && <p className="text-red-500 text-xs mt-1.5 ml-1">{dict.requiredMsg}</p>}
+                      </div>
+                    </div>
+
+                    {/* INCOME FIELD (Optional) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center w-full">
+                      <span className="text-sm font-semibold tracking-wide text-white/70 uppercase md:col-span-1">
+                        {dict.incomeLabel} :
+                      </span>
+                      <div className="md:col-span-2 w-full">
+                        <input
+                          type="number" 
+                          name="income" 
+                          placeholder={dict.incomePlaceholder} 
+                          value={schemeForm.income} 
+                          onChange={handleSchemeChange}
+                          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
+                        />
+                      </div>
+                    </div>
                     
-                    <select
-                      name="state" value={schemeForm.state} onChange={handleSchemeChange}
-                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-                    >
-                      <option value="">{dict.selectState}</option>
-                      {statesArrayToRender.map((stateLabel, index) => (
-                        <option key={stateLabel} value={indianStatesEn[index]}>{stateLabel}</option>
-                      ))}
-                    </select>
+                    {/* STATE FIELD */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center w-full">
+                      <span className="text-sm font-semibold tracking-wide text-white/70 uppercase md:col-span-1">
+                        {dict.stateLabel} :
+                      </span>
+                      <div className="md:col-span-2 w-full">
+                        <select
+                          name="state" value={schemeForm.state} onChange={handleSchemeChange}
+                          className={`w-full bg-white/[0.05] border ${formErrors.state ? "border-red-500 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]" : "border-white/[0.08] focus:border-[rgba(139,92,246,0.5)]"} rounded-xl px-5 py-4 outline-none text-white transition-all duration-200`}
+                        >
+                          <option value="">{dict.selectState}</option>
+                          {statesArrayToRender.map((stateLabel, index) => (
+                            <option key={stateLabel} value={indianStatesEn[index]}>{stateLabel}</option>
+                          ))}
+                        </select>
+                        {formErrors.state && <p className="text-red-500 text-xs mt-1.5 ml-1">{dict.requiredMsg}</p>}
+                      </div>
+                    </div>
 
-                    <select
-                      name="occupation" value={schemeForm.occupation} onChange={handleSchemeChange}
-                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-                    >
-                      <option value="">{dict.occupationPlaceholder}</option>
-                      <option value="student">{dict.student}</option>
-                      <option value="farmer">{dict.farmer}</option>
-                      <option value="worker">{dict.worker}</option>
-                      <option value="business">{dict.business}</option>
-                    </select>
-                    <select
-                      name="category" value={schemeForm.category} onChange={handleSchemeChange}
-                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-                    >
-                      <option value="">{dict.categoryPlaceholder}</option>
-                      <option value="general">{dict.general}</option>
-                      <option value="obc">{dict.obc}</option>
-                      <option value="sc">{dict.sc}</option>
-                      <option value="st">{dict.st}</option>
-                    </select>
-                    <select
-                      name="gender" value={schemeForm.gender} onChange={handleSchemeChange}
-                      className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 outline-none focus:border-[rgba(139,92,246,0.5)] text-white"
-                    >
-                      <option value="">{dict.genderPlaceholder}</option>
-                      <option value="male">{dict.male}</option>
-                      <option value="female">{dict.female}</option>
-                    </select>
-                    <button onClick={findSchemes} className={`${baseCta} ${purpleCta} text-white`}>
-                      {schemeLoading ? (schemeForm.language === "hindi" ? "खोज की जा रही है..." : "Finding...") : (schemeForm.language === "hindi" ? "मेरी योजनाएं खोजें" : "Find My Schemes")}
-                      <span className="inline-block">→</span>
-                    </button>
+                    {/* CATEGORY FIELD */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center w-full">
+                      <span className="text-sm font-semibold tracking-wide text-white/70 uppercase md:col-span-1">
+                        {dict.categoryLabel} :
+                      </span>
+                      <div className="md:col-span-2 w-full">
+                        <select
+                          name="category" value={schemeForm.category} onChange={handleSchemeChange}
+                          className={`w-full bg-white/[0.05] border ${formErrors.category ? "border-red-500 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]" : "border-white/[0.08] focus:border-[rgba(139,92,246,0.5)]"} rounded-xl px-5 py-4 outline-none text-white transition-all duration-200`}
+                        >
+                          <option value="">{dict.categoryPlaceholder}</option>
+                          <option value="general">{dict.general}</option>
+                          <option value="obc">{dict.obc}</option>
+                          <option value="sc">{dict.sc}</option>
+                          <option value="st">{dict.st}</option>
+                        </select>
+                        {formErrors.category && <p className="text-red-500 text-xs mt-1.5 ml-1">{dict.requiredMsg}</p>}
+                      </div>
+                    </div>
+
+                    {/* GENDER FIELD */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center w-full">
+                      <span className="text-sm font-semibold tracking-wide text-white/70 uppercase md:col-span-1">
+                        {dict.genderLabel} :
+                      </span>
+                      <div className="md:col-span-2 w-full">
+                        <select
+                          name="gender" value={schemeForm.gender} onChange={handleSchemeChange}
+                          className={`w-full bg-white/[0.05] border ${formErrors.gender ? "border-red-500 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]" : "border-white/[0.08] focus:border-[rgba(139,92,246,0.5)]"} rounded-xl px-5 py-4 outline-none text-white transition-all duration-200`}
+                        >
+                          <option value="">{dict.genderPlaceholder}</option>
+                          <option value="male">{dict.male}</option>
+                          <option value="female">{dict.female}</option>
+                        </select>
+                        {formErrors.gender && <p className="text-red-500 text-xs mt-1.5 ml-1">{dict.requiredMsg}</p>}
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button onClick={findSchemes} className={`${baseCta} ${purpleCta} text-white`}>
+                        {schemeLoading ? (schemeForm.language === "hindi" ? "खोज की जा रही है..." : "Finding...") : (schemeForm.language === "hindi" ? "मेरी योजनाएं खोजें" : "Find My Schemes")}
+                        <span className="inline-block">→</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -559,7 +662,7 @@ export default function AskAIPage() {
                       rel="noreferrer"
                       className={`block text-center py-4 ${ghostBtn} text-white/80 hover:text-white transition-colors`}
                     >
-                      {language === "hindi" ? "सीधे पीजी पोर्टल (PG Portal) पर सबमिट करें ↗" : "Submit on PG Portal ↗"}
+                      {language === "hindi" ? "सीधे पीजी पोर्टल (PG Portal) पर सबमिट करें ↗️" : "Submit on PG Portal ↗️"}
                     </a>
 
                     <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] p-5">
