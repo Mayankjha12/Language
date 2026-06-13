@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import axios from "react";
 
 type Tab = "home" | "schemes" | "complaints" | "documents" | "help";
 
@@ -139,7 +139,6 @@ export default function AskAIPage() {
     try {
       setSchemeLoading(true);
       setSelectedDetailedScheme(null);
-      // Fixed: Pointing cleanly to main active core route pipeline array
       const res = await axios.post("/api/schemes", {
         age: Number(schemeForm.age), income: Number(schemeForm.income),
         occupation: schemeForm.occupation, category: schemeForm.category,
@@ -474,7 +473,7 @@ export default function AskAIPage() {
                     >
                       <option value="">{language === "hindi" ? "समस्या का प्रकार चुनें" : "Select Issue Type"}</option>
                       <option value="Water Supply">{language === "hindi" ? "जल आपूर्ति (Water Supply)" : "Water Supply"}</option>
-                      <option value="Electricity">{language === "hindi" ? "बिजلی समस्या (Electricity)" : "Electricity"}</option>
+                      <option value="Electricity">{language === "hindi" ? "बिजली समस्या (Electricity)" : "Electricity"}</option>
                       <option value="Road Damage">{language === "hindi" ? "सड़क क्षति (Road Damage)" : "Road Damage"}</option>
                       <option value="Garbage">{language === "hindi" ? "कचरा प्रबंधन (Garbage)" : "Garbage"}</option>
                     </select>
