@@ -30,7 +30,7 @@ const languages: LanguageConfig[] = [
   { id: 16, label: "संस्कृत", value: "sa-IN" },
   { id: 17, label: "कोंकणी", value: "kok-IN" },
   { id: 18, label: "नेपाली", value: "ne-IN" },
-  { id: 19, label: "মৈতৈলোन्", value: "mni-IN" },
+  { id: 19, label: "मৈতৈলোन्", value: "mni-IN" },
   { id: 20, label: "डोगरी", value: "doi-IN" },
   { id: 21, label: "سنڌي", value: "sd-IN" },
   { id: 22, label: "कॉशुर", value: "ks-IN" }
@@ -38,14 +38,7 @@ const languages: LanguageConfig[] = [
 
 export default function VoicePage() {
   const openServiceText: Record<string, string> = {
-    "en-US": "Open Recommended Service", "hi-IN": "अनुशंसित सेवा खोलें", "bn-IN": "প্রস্তাবিত পরিষেবা খুলুন",
-    "ta-IN": "பரிந்துரைக்கப்பட்ட சேவையைத் திறக்கவும்", "te-IN": "సిఫార్సు చేసిన సేవను తెరవండి", "mr-IN": "शिफारस केलेली सेवा उघडा",
-    "gu-IN": "ભલામણ કરેલી सेवा खोलो", "pa-IN": "ਸਿਫਾਰਸ਼ ਕੀਤੀ ਸੇਵਾ ਖੋਲ੍ਹੋ", "kn-IN": "ಶಿಫਾਰሱ ಮಾಡಿದ ಸೇವೆ ತೆರೆಯಿರಿ",
-    "ml-IN": "ശുപാർശ ചെയ്ത സേവനം തുറക്കുക", "or-IN": "ପྲସ୍ତାବିତ ସେବା ଖୋଲନ୍ତୁ", "ur-IN": "تجویز کردہ سروس کھولیں",
-    "as-IN": "পৰামৰ্শ দিয়া সেৱা খোলক", "mai-IN": "সুझाओल सेवा खोलू", "bho-IN": "সুझावल सेवा खोलीं",
-    "sa-IN": "अनुशंसितसेवां उद्घाटयतु", "kok-IN": "शिफारस केलेली सेवा उघडा", "ne-IN": "सिफारिश गरिएको सेवा खोल्नुहोस्",
-    "mni-IN": "Recommended Service Open Tou", "doi-IN": "सिफारिश कित्ती सेवा खोलो", "sd-IN": "تجويز ڪيل سروس ڪوليو",
-    "ks-IN": "تجویز کرمُत सरूस कُلِو"
+    "en-US": "Open Recommended Service", "hi-IN": "अनुशंसित सेवा खोलें"
   };
 
   const uiText: Record<string, {
@@ -53,9 +46,7 @@ export default function VoicePage() {
     transcript: string; placeholder: string; response: string; defaultResponse: string;
   }> = {
     "en-US": { title: "Maya", subtitle: "Your multilingual government assistant", listening: "Listening... Speak naturally", thinking: "AI is thinking...", ready: "Ready", transcript: "Live Transcript Panel", placeholder: "Speak something...", response: "AI Response", defaultResponse: "Awaiting voice input..." },
-    "hi-IN": { title: "माया", subtitle: "आपकी बहुभाषी सरकारी सहायक", listening: "सुन रही हूँ... सहजता से बोलें", thinking: "सोच रही हूँ...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "कुछ बोलिए...", response: "उत्तर", defaultResponse: "बोलना शुरू करें..." },
-    "bn-IN": { title: "মায়া", subtitle: "আপনার বহুভাষিক সরকারি সহকারী", listening: "শুনছি...", thinking: "ভাবছি...", ready: "প্রস্তুত", transcript: "লাইভ ট্রান্সক্রিপ্ট", placeholder: "কিছু বলুন...", response: "উত্তর", defaultResponse: "কথা বলা শুরু করুন..." },
-    "ta-IN": { title: "மாயா", subtitle: "உங்கள் பலமொழி அரசு உதவியாளர்", listening: "கேட்டுக்கொண்டு இருக்கிறேன்...", thinking: "யோசித்து கொண்டிருக்கிறேன்...", ready: "தயார்", transcript: "நேரடி உரை", placeholder: "ஏதாவது பேசுங்கள்...", response: "பதில்", defaultResponse: "பேசத் தொடங்குங்கள்..." }
+    "hi-IN": { title: "माया", subtitle: "आपकी बहुभाषी सरकारी सहायक", listening: "सुन रही हूँ... सहजता से बोलें", thinking: "सोच रही हूँ...", ready: "तैयार", transcript: "लाइव ट्रांसक्रिप्ट", placeholder: "कुछ बोलिए...", response: "उत्तर", defaultResponse: "बोलना शुरू करें..." }
   };
 
   const [languageSelected, setLanguageSelected] = useState(false);
@@ -77,24 +68,23 @@ export default function VoicePage() {
 
   const playSystemWelcomeSpeech = useCallback(() => {
     window.speechSynthesis.cancel();
-    const dynamicWelcomeScript = 
-      "Welcome to JanMitra AI. For English press 1. हिंदी के लिए 2 दबाइए। বাংলার জন্য 3 চাপून। தமிழுக்கு 4 அழுத்தவும்.";
-    const utterance = new SpeechSynthesisUtterance(dynamicWelcomeScript);
+    const welcomeText = "Welcome to JanMitra AI. For English press 1. हिंदी के लिए 2 दबाइए।";
+    const utterance = new SpeechSynthesisUtterance(welcomeText);
     utterance.lang = "hi-IN";
     utterance.rate = 0.95;
     window.speechSynthesis.speak(utterance);
   }, []);
 
   useEffect(() => {
-    const unlockAndPlay = () => {
+    const unlockAudio = () => {
       if (!hasInteracted && !languageSelected) {
         setHasInteracted(true);
         playSystemWelcomeSpeech();
       }
-      window.removeEventListener("click", unlockAndPlay);
+      window.removeEventListener("click", unlockAudio);
     };
-    window.addEventListener("click", unlockAndPlay);
-    return () => window.removeEventListener("click", unlockAndPlay);
+    window.addEventListener("click", unlockAudio);
+    return () => window.removeEventListener("click", unlockAudio);
   }, [hasInteracted, languageSelected, playSystemWelcomeSpeech]);
 
   useEffect(() => {
@@ -112,9 +102,9 @@ export default function VoicePage() {
   const startConversationalEngine = async () => {
     if (currentAudioRef.current) currentAudioRef.current.pause();
     if (isProcessing.current) return;
-    
+
     audioChunksRef.current = [];
-    console.log("🎙️ Opening Automated Mic Sensor Grid Pipeline.");
+    console.log("🎙️ Opening Automated Mic Sensor Grid.");
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -123,7 +113,7 @@ export default function VoicePage() {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContextClass();
       audioContextRef.current = ctx;
-      
+
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
@@ -139,35 +129,35 @@ export default function VoicePage() {
       recorder.start(100);
       setListening(true);
 
-      let lastVocalActivity = Date.now();
+      let lastActivity = Date.now();
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
 
-      const inspectAudioWaves = () => {
+      const inspectWaves = () => {
         if (!recorder || recorder.state !== "recording" || isProcessing.current) return;
-        
+
         analyser.getByteFrequencyData(dataArray);
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
-        const currentAmplitude = sum / bufferLength;
+        const amplitude = sum / bufferLength;
 
-        if (currentAmplitude > 14) {
-          lastVocalActivity = Date.now();
+        if (amplitude > 14) {
+          lastActivity = Date.now();
         } else {
-          const silenceInterval = Date.now() - lastVocalActivity;
-          if (silenceInterval > 3200) { 
-            console.log("⚡ Silence detected, parsing payload block.");
+          if (Date.now() - lastActivity > 3000) { 
+            console.log("⚡ Automation triggered on loop threshold silence.");
             isProcessing.current = true;
             stopListeningAndSubmitData(recorder);
             return;
           }
         }
-        animationFrameRef.current = requestAnimationFrame(inspectAudioWaves);
+        animationFrameRef.current = requestAnimationFrame(inspectWaves);
       };
 
-      requestAnimationFrame(inspectAudioWaves);
-    } catch (error) {
-      console.error("Microphone loop denied context tracker:", error);
+      requestAnimationFrame(inspectWaves);
+    } catch (err) {
+      console.error("Mic access loop error:", err);
+      isProcessing.current = false;
     }
   };
 
@@ -183,12 +173,11 @@ export default function VoicePage() {
         formData.append("audio", new File([audioBlob], "voice.webm", { type: "audio/webm" }));
         formData.append("language", language);
 
-        const sttResponse = await fetch("/api/stt", { method: "POST", body: formData });
-        const sttData = await sttResponse.json();
+        const sttRes = await fetch("/api/stt", { method: "POST", body: formData });
+        const sttData = await sttRes.json();
         const transcriptText = sttData.transcript || "";
 
-        if (!transcriptText.trim() || transcriptText.length < 2) {
-          console.log("Empty whisper chunk, re-spinning microphone node.");
+        if (!transcriptText.trim()) {
           isProcessing.current = false;
           setLoading(false);
           startConversationalEngine();
@@ -197,7 +186,6 @@ export default function VoicePage() {
 
         setMessage(transcriptText);
 
-        // Routed directly to the new dedicated voice endpoint!
         const voiceRes = await axios.post("/api/voice", { message: transcriptText, language });
         const aiReply = voiceRes.data.reply;
         const aiIntent = voiceRes.data.intent;
@@ -206,21 +194,21 @@ export default function VoicePage() {
 
         const routeMap: Record<string, string> = {
           schemes: "/ask-ai",
-          complaints: "/ask-ai", 
+          complaints: "/ask-ai",
           documents: "/ask-ai"
         };
         setSuggestedPage(routeMap[aiIntent] || "");
 
-        const ttsResponse = await fetch("/api/tts", {
+        const ttsRes = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: aiReply, languageCode: language }),
         });
-        const ttsData = await ttsResponse.json();
+        const ttsData = await ttsRes.json();
 
         if (ttsData.audios?.[0]) {
-          const cleanedBase64 = ttsData.audios[0].replace(/\s/g, "");
-          const audio = new Audio(`data:audio/wav;base64,${cleanedBase64}`);
+          const base64Audio = ttsData.audios[0].replace(/\s/g, "");
+          const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
           currentAudioRef.current = audio;
           audio.onended = () => {
             isProcessing.current = false;
@@ -232,26 +220,34 @@ export default function VoicePage() {
           startConversationalEngine();
         }
       } catch (err) {
-        console.error("Pipeline failure reset trace:", err);
+        console.error("Pipeline breakdown reset loop:", err);
         isProcessing.current = false;
         setLoading(false);
         startConversationalEngine();
       }
     };
 
-    activeRecorder.stop();
+    try {
+      activeRecorder.stop();
+    } catch (e) {
+      console.log("Recorder already processed.");
+    }
+    
+    // 🌟 FIX: Accurate variable tracking logic for cleanup arrays
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
     }
   };
 
   const triggerLocalizedGreetingConfirmation = async (selectedLang: string) => {
     window.speechSynthesis.cancel();
     const greetings: Record<string, string> = {
-      "en-US": "Language mapped. Maya is online. Please speak now.",
+      "en-US": "Language configured. Maya is online. Please speak now.",
       "hi-IN": "जी हाँ, हिंदी भाषा सक्रिय है। माया सुन रही है, कहिए।"
     };
 
@@ -289,9 +285,17 @@ export default function VoicePage() {
     setListening(false);
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null; }
-    if (streamRef.current) { streamRef.current.getTracks().forEach(track => track.stop()); streamRef.current = null; }
-    if (audioContextRef.current) { audioContextRef.current.close(); audioContextRef.current = null; }
     
+    // 🌟 FIX: Cleaned runtime loops to prevent pointer reference exceptions
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+
     setLanguageSelected(false);
     setMessage("");
     setReply("");
@@ -310,7 +314,7 @@ export default function VoicePage() {
             🇮🇳 JanMitra AI
           </h1>
           <p className="text-center text-neutral-400 mt-4 text-sm md:text-base">
-            {!hasInteracted ? "Click anywhere on the screen to unlock full system audio loops..." : "Select your regional language module setup instantly below."}
+            {!hasInteracted ? "Click anywhere on the screen to unlock system audio stream nodes..." : "Select your regional language module setup instantly below."}
           </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
