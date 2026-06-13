@@ -139,7 +139,8 @@ export default function AskAIPage() {
     try {
       setSchemeLoading(true);
       setSelectedDetailedScheme(null);
-      const res = await axios.post("/api/find-schemes", {
+      // Fixed: Pointing cleanly to main active core route pipeline array
+      const res = await axios.post("/api/schemes", {
         age: Number(schemeForm.age), income: Number(schemeForm.income),
         occupation: schemeForm.occupation, category: schemeForm.category,
         gender: schemeForm.gender, state: schemeForm.state,
@@ -834,7 +835,7 @@ export default function AskAIPage() {
                       disabled={loading || !message.trim()}
                       className="absolute right-2 p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all duration-200 disabled:opacity-30 disabled:hover:bg-blue-600 shadow-md flex items-center justify-center active:scale-95 h-9 w-9"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                      <svg xmlns="http://www.w3.org/2000/xl" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                       </svg>
                     </button>
