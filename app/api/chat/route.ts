@@ -9,25 +9,21 @@ const openai = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, language } = body;
-    const clientLang = (language || "english").toLowerCase();
-    const isHindi = clientLang === "hindi";
+    const { message } = body; // Seamless interface: no manual language parameter forced from frontend
 
-    console.log(`💬 JanMitra Chat Engine active. Language Mode: ${clientLang}`);
+    console.log(`💬 JanMitra Processing Auto-Language Query: "${message}"`);
 
     if (!message || message.trim() === "") {
-      return NextResponse.json({ 
-        reply: isHindi ? "कृपया अपना प्रश्न टाइप करें।" : "Please type your query." 
-      });
+      return NextResponse.json({ reply: "कृपया अपना प्रश्न टाइप करें। / Please type your query." });
     }
 
-    // High-Fidelity System Directive for the Chat Assistant
-    const systemPrompt = `You are JanMitra AI, an empathetic, highly efficient, and supportive citizen services AI assistant. 
-Your purpose is to guide Indian citizens regarding government schemes, civic grievances, documentation processes, and public welfare utilities.
+    // 🌟 MULTI-LINGUAL AUTO-DETECTION ENGINE DIRECTIVE
+    const systemPrompt = `You are JanMitra AI, an expert citizen services chatbot. Your absolute directive is to dynamically analyze the language of the user's input.
+- If the user types in Hindi (Devnagari) or Hinglish (Hindi written in Roman script like 'yojana kya hai'), you MUST respond entirely in clean, simple, everyday conversational Hindi (Devnagari Script).
+- If the user types in English, respond entirely in clear, professional English.
+- For any other major Indian regional language input, detect it and respond in that specific language using its native script.
 
-STRICT LAWS:
-1. Respond strictly in the requested target language mode. If the mode is Hindi, use clear, easy-to-understand conversational Hindi (Devnagari Script). If English, use professional English.
-2. Keep your answer concise, structural, actionable, and formatted nicely with clean line breaks. Avoid raw markdown code blocks.`;
+Keep your answer highly conversational, well-structured with clean line breaks, short paragraphs, and actionable bullet points. Avoid raw markdown code blocks like \`\`\`json.`;
 
     let replyText = "";
     try {
@@ -36,67 +32,59 @@ STRICT LAWS:
           model: "sarvam-30b",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `User query: ${message}\nRespond in language: ${clientLang}` }
+            { role: "user", content: message }
           ],
-          temperature: 0.3,
+          temperature: 0.2,
         },
-        { timeout: 8500 } // Dynamic timeout to prevent UI infinite loading wheels
+        { timeout: 8500 } // Guardrail to prevent infinite UI loading wheels
       );
 
       replyText = completion.choices[0].message.content?.trim() || "";
     } catch (apiError) {
-      console.warn("⚠️ Chat API bottleneck detected. Initiating immediate localized smart fallback handler.", apiError);
+      console.warn("⚠️ Chat API congestion detected. Launching active fallback overlay routing.", apiError);
     }
 
-    // ─── ⚡ CHAT FALLBACK MATRIX: GUARANTEES RESPONSE DELIVERY NO MATTER WHAT ───
+    // ─── ⚡ CHAT THREAD FAIL-SAFE RE-ENFORCEMENT MATRIX ────────────────────────
     if (!replyText || replyText.length < 3) {
-      console.log("⚡ Injecting clean adaptive assistant text to prevent empty UI blocks.");
+      console.log("⚡ Triggering clean contextual backup response block.");
       
       const lowerMessage = message.toLowerCase();
-
-      if (isHindi) {
-        // Smart keyword checking to provide context-aware text even during fallbacks!
-        if (lowerMessage.includes("scheme") || lowerMessage.includes("योजना") || lowerMessage.includes("pension")) {
-          replyText = `नमस्ते! मैं जनमित्र एआई हूँ। आपके प्रश्न के अनुसार योजनाओं की जानकारी निम्नलिखित है:
-1. आप हमारे 'Discover Eligible Schemes' टैब में जाकर अपनी उम्र और आय के अनुसार सही सरकारी योजनाएं ढूंढ सकते हैं।
-2. मुख्य कल्याणकारी योजनाएं जैसे आयुष्मान भारत योजना (मुफ्त स्वास्थ्य देखभाल) और पीएम आवास योजना के लिए आप सीधे आधिकारिक पोर्टल या नजदीकी जन सेवा केंद्र (CSC) पर जा सकते हैं।
-क्या आप किसी विशिष्ट योजना के पात्रता नियमों के बारे में जानना चाहते हैं? मुझे विस्तार से बताएं।`;
-        } else if (lowerMessage.includes("complaint") || lowerMessage.includes("शिकायत") || lowerMessage.includes("पानी") || lowerMessage.includes("कचरा")) {
-          replyText = `नमस्ते! नागरिक सेवा सहायक पोर्टल पर आपका स्वागत है। आपकी शिकायत के संदर्भ में त्वरित निर्देश:
-1. आप हमारे 'Draft & File Complaints' टैब का उपयोग करके सीधे संबंधित सरकारी विभाग के लिए एक औपचारिक कानूनी पत्र (Legal Draft) तैयार कर सकते हैं।
-2. इस पत्र को डाउनलोड या कॉपी करके आप भारत सरकार के केंद्रीय पीजी पोर्टल (pgportal.gov.in) पर ऑनलाइन दर्ज करा सकते हैं।
-कृपया अपनी समस्या का स्थान या वार्ड नंबर साझा करें ताकि मैं आपको और सटीक कदम बता सकूं।`;
+      // Check if query matrix patterns lean towards localized terms
+      const isHindiQuery = /[\u0900-\u097F]/.test(message) || lowerMessage.includes("yojana") || lowerMessage.includes("shikayat") || lowerMessage.includes("paani");
+      
+      if (isHindiQuery) {
+        if (lowerMessage.includes("scheme") || lowerMessage.includes("योजना")) {
+          replyText = `नमस्ते! मैं आपका जनमित्र एआई सहायक हूँ। आपके प्रश्न के अनुसार त्वरित निर्देश:
+- आप हमारे 'Discover Eligible Schemes' टैब में जाकर अपनी प्रोफाइल (उम्र, आय, श्रेणी) भरकर सही सरकारी योजनाएं ढूंढ सकते हैं।
+- आयुष्मान भारत और पीएम आवास योजना जैसी मुख्य कल्याणकारी नीतियों की विस्तृत जानकारी आपको वहां मिल जाएगी।
+कृपया अपना विशिष्ट प्रश्न जारी रखें, मैं पूरी तरह तैयार हूँ!`;
         } else {
-          replyText = `नमस्ते! मैं आपका नागरिक सेवा सहायक जनमित्र एआई हूँ। 
-मैं आपके सभी प्रशासनिक प्रश्नों, जैसे कि विभिन्न सरकारी प्रमाणपत्र (आय, जाति, निवास प्रमाण पत्र), सार्वजनिक कल्याणकारी योजनाएं, और स्थानीय नगर निगम से जुड़ी शिकायतों के समाधान में आपकी सहायता कर सकता हूँ।
-
-कृपया मुझे अपनी समस्या या प्रश्न के बारे में थोड़ा और विस्तार से बताएं, ताकि मैं आपको सही और सटीक जानकारी दे सकूं!`;
+          replyText = `नमस्ते! मैं आपका जनमित्र एआई सहायक हूँ। इस समय सर्वर रिस्पॉन्स में थोड़े विलंब के कारण मैं पूर्ण विश्लेषण लोड नहीं कर पाया।
+- यदि आपका प्रश्न किसी प्रशासनिक शिकायत से जुड़ा है, तो कृपया 'Draft & File Complaints' विकल्प का उपयोग करें।
+- अन्य नागरिक सेवाओं (जैसे राशन कार्ड, प्रमाणपत्र पंजीकरण) के लिए कृपया अपना विवरण नीचे पुनः टाइप करें।`;
         }
       } else {
-        // Professional English Fallback Grid
-        if (lowerMessage.includes("scheme") || lowerMessage.includes("pension") || lowerMessage.includes("welfare")) {
-          replyText = `Hello! I am JanMitra AI, your governance companion. Regarding government welfare frameworks:
-1. Navigate directly to our 'Discover Eligible Schemes' panel to match your profile parameters against running central and state policies.
-2. Major operational initiatives like PM-JAY (Healthcare support up to ₹5 Lakh) or PMAY (Housing) can be validated using specialized digital forms.
-Please share your category or industry setup so I can fetch precise guidelines for you.`;
+        if (lowerMessage.includes("scheme") || lowerMessage.includes("welfare")) {
+          replyText = `Hello! I am JanMitra AI, your dedicated citizen services assistant. Regarding welfare configurations:
+- Please navigate directly to the 'Discover Eligible Schemes' tab on the dashboard to filter central and state policies matching your profile.
+- You can find step-by-step criteria for healthcare, housing, and scholarship programs there.
+Please drop your exact question again, and I will assist you immediately!`;
         } else {
-          replyText = `Hello! I am JanMitra AI, your dedicated citizen services assistant. 
-I can help you understand complex government regulations, verify step-by-step document workflows (Ration cards, voter IDs, certificates), and draft professional department-specific civic complaints.
-
-Please describe your query in detail, and I will outline the exact actionable operations for you immediately!`;
+          replyText = `Hello! I am JanMitra AI, your governance companion. The system is experiencing a brief connection delay.
+- For legal grievance submissions, please access the 'Draft & File Complaints' console.
+- For document summary extraction, check out the 'Document Explainer' panel.
+Please re-state your query, and I'll outline the operational steps for you!`;
         }
       }
     }
 
-    // Clean any unescaped anomalous character hashes before dispatching
+    // Strip out erratic syntax markers before dispatching data payload to the client thread
     replyText = replyText.replace(/[*#`"]/g, "").trim();
 
     return NextResponse.json({ reply: replyText });
 
   } catch (error) {
-    console.error("❌ Fatal crash inside chat API terminal loop:", error);
-    return NextResponse.json({ 
-      reply: "Our context lines are currently busy. Please try processing your message parameter once again." 
-    }, { status: 500 });
+    console.error("❌ Critical breakdown inside chat route controller:", error);
+    return NextResponse.json({ reply: "Connection timeout. Please try processing your message again." }, { status: 500 });
   }
 }
