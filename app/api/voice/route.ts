@@ -1,43 +1,38 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-// Client ko function ke andar initialize karo ya ensure karo keys global hain
 const openai = new OpenAI({
+  // Vercel dashboard mein "OPENAI_API_KEY" variable set karna, key wahan se uth jayegi.
   apiKey: process.env.OPENAI_API_KEY || "", 
+  baseURL: "https://openrouter.ai/api/v1",
 });
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { message, language } = body;
-
-    if (!message) {
-        return NextResponse.json({ reply: "I didn't hear anything.", intent: "none" });
-    }
+    const { message, language } = await req.json();
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "google/gemini-2.0-flash-001",
       messages: [
         { 
           role: "system", 
-          content: `You are Maya, an Indian government voice assistant. Reply in the same language as the user. Keep it extremely brief (max 2 sentences). Output ONLY valid JSON, no markdown: {"reply": "text", "intent": "schemes" | "complaints" | "documents" | "none"}` 
+          content: `You are Maya, an Indian government assistant. Keep responses brief (max 2 sentences). 
+           Classify intent as 'schemes', 'complaints', 'documents', or 'none'. 
+           Output ONLY raw JSON format: {"reply": "...", "intent": "..."}` 
         },
-        { role: "user", content: `Query: ${message} | Language: ${language}` }
+        { role: "user", content: `Query: ${message} | Lang: ${language}` }
       ],
-      // response_format line ko comment out kar do agar OpenRouter use kar rahe ho
+      extra_headers: {
+        "HTTP-Referer": "https://janmitra-ai.vercel.app", 
+        "X-Title": "JanMitra AI",
+      }
     });
 
     const content = completion.choices[0].message.content;
-    if (!content) throw new Error("No content from OpenAI");
-
-    const parsed = JSON.parse(content);
-    return NextResponse.json(parsed);
+    return NextResponse.json(JSON.parse(content || '{"reply": "...", "intent": "none"}'));
 
   } catch (error) {
-    console.error("OpenAI Error:", error);
-    return NextResponse.json({ 
-        reply: "Sorry, I am having trouble connecting right now.", 
-        intent: "none" 
-    }, { status: 500 });
+    console.error("OpenRouter Error:", error);
+    return NextResponse.json({ reply: "Service error.", intent: "none" }, { status: 500 });
   }
 }
