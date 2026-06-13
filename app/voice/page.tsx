@@ -1,7 +1,7 @@
 "use client";
 
-import { Mic, Volume2, Square, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Mic, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 
@@ -39,13 +39,13 @@ const languages: LanguageConfig[] = [
 export default function VoicePage() {
   const openServiceText: Record<string, string> = {
     "en-US": "Open Recommended Service", "hi-IN": "अनुशंसित सेवा खोलें", "bn-IN": "প্রস্তাবিত পরিষেবা খুলুন",
-    "ta-IN": "பரிந்துரைக்கப்பட்ட சேவையைத் திறக்கவும்", "te-IN": "సిఫార్సు చేసిన सేవను తెరవండి", "mr-IN": "शिफारस केलेली सेवा उघडा",
-    "gu-IN": "ભલામણ કરેલી સેવા ખોલો", "pa-IN": "ਸਿਫਾਰਸ਼ ਕੀਤੀ ਸੇਵਾ ਖੋਲ੍ਹੋ", "kn-IN": "ಶಿಫਾਰಸು ಮಾಡಿದ ಸೇವೆ ತೆರೆಯಿರಿ",
-    "ml-IN": "ശുപാർശ ചെയ്ത സേവനം തുറക്കുക", "or-IN": "ପ୍ରସ୍ତାବିତ ସେବା ଖୋଲନ୍ତୁ", "ur-IN": "تجویز کردہ سروس کھولیں",
+    "ta-IN": "பரிந்துரைக்கப்பட்ட சேவையைத் திறக்கவும்", "te-IN": "సిఫార్సు చేసిన సేవను తెరవండి", "mr-IN": "शिफारस केलेली सेवा उघडा",
+    "gu-IN": "ભલામણ કરેલી सेवा खोलो", "pa-IN": "ਸਿਫਾਰਸ਼ ਕੀਤੀ ਸੇਵਾ ਖੋਲ੍ਹੋ", "kn-IN": "ಶಿಫਾਰሱ ಮಾಡಿದ ಸೇವೆ ತೆರೆಯಿರಿ",
+    "ml-IN": "ശുപാർശ ചെയ്ത സേവനം തുറക്കുക", "or-IN": "ପྲସ୍ତାବିତ ସେବା ଖୋଲନ୍ତୁ", "ur-IN": "تجویز کردہ سروس کھولیں",
     "as-IN": "পৰামৰ্শ দিয়া সেৱা খোলক", "mai-IN": "সুझाओल सेवा खोलू", "bho-IN": "সুझावल सेवा खोलीं",
-    "sa-IN": "अनुशंसितसेवां उद्घाटयतु", "kok-IN": "शिफारस केलेली सेवा उघडा", "ne-IN": "сиफारिश गरिएको सेवा खोल्नुहोस्",
+    "sa-IN": "अनुशंसितसेवां उद्घाटयतु", "kok-IN": "शिफारस केलेली सेवा उघडा", "ne-IN": "सिफारिश गरिएको सेवा खोल्नुहोस्",
     "mni-IN": "Recommended Service Open Tou", "doi-IN": "सिफारिश कित्ती सेवा खोलो", "sd-IN": "تجويز ڪيل سروس ڪوليو",
-    "ks-IN": "تجویز کرمُت سروس کُلِو"
+    "ks-IN": "تجویز کرمُत सरूस कُلِو"
   };
 
   const uiText: Record<string, {
@@ -62,7 +62,6 @@ export default function VoicePage() {
   const [language, setLanguage] = useState("en-US");
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
-  const [intent, setIntent] = useState("");
   const [suggestedPage, setSuggestedPage] = useState("");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -79,7 +78,7 @@ export default function VoicePage() {
   const playSystemWelcomeSpeech = useCallback(() => {
     window.speechSynthesis.cancel();
     const dynamicWelcomeScript = 
-      "Welcome to JanMitra AI. For English press 1. हिंदी के लिए 2 दबाइए। বাংলার জন্য 3 চাপুন। தமிழுக்கு 4 அழுத்தவும்.";
+      "Welcome to JanMitra AI. For English press 1. हिंदी के लिए 2 दबाइए। বাংলার জন্য 3 চাপून। தமிழுக்கு 4 அழுத்தவும்.";
     const utterance = new SpeechSynthesisUtterance(dynamicWelcomeScript);
     utterance.lang = "hi-IN";
     utterance.rate = 0.95;
@@ -110,7 +109,6 @@ export default function VoicePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [languageSelected]);
 
-  // 🌟 CONVERSATIONAL AUTOMATION DETECTOR LOOP
   const startConversationalEngine = async () => {
     if (currentAudioRef.current) currentAudioRef.current.pause();
     if (isProcessing.current) return;
@@ -153,12 +151,11 @@ export default function VoicePage() {
         for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
         const currentAmplitude = sum / bufferLength;
 
-        // Reset tracking timer if voice peaks above general environmental floor boundaries
         if (currentAmplitude > 14) {
           lastVocalActivity = Date.now();
         } else {
           const silenceInterval = Date.now() - lastVocalActivity;
-          if (silenceInterval > 3200) { // 3.2s automated closure threshold
+          if (silenceInterval > 3200) { 
             console.log("⚡ Silence detected, parsing payload block.");
             isProcessing.current = true;
             stopListeningAndSubmitData(recorder);
@@ -186,7 +183,6 @@ export default function VoicePage() {
         formData.append("audio", new File([audioBlob], "voice.webm", { type: "audio/webm" }));
         formData.append("language", language);
 
-        // STT Pipeline Endpoint Call
         const sttResponse = await fetch("/api/stt", { method: "POST", body: formData });
         const sttData = await sttResponse.json();
         const transcriptText = sttData.transcript || "";
@@ -201,22 +197,20 @@ export default function VoicePage() {
 
         setMessage(transcriptText);
 
-        // Routed cleanly to our fresh localized Voice API router endpoint!
+        // Routed directly to the new dedicated voice endpoint!
         const voiceRes = await axios.post("/api/voice", { message: transcriptText, language });
         const aiReply = voiceRes.data.reply;
         const aiIntent = voiceRes.data.intent;
 
         setReply(aiReply);
-        setIntent(aiIntent);
 
         const routeMap: Record<string, string> = {
           schemes: "/ask-ai",
-          complaints: "/ask-ai", // Directly matches your inner tabs mapping rules safely
+          complaints: "/ask-ai", 
           documents: "/ask-ai"
         };
         setSuggestedPage(routeMap[aiIntent] || "");
 
-        // Text To Speech synthesis audio mapping trigger
         const ttsResponse = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -295,13 +289,12 @@ export default function VoicePage() {
     setListening(false);
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null; }
-    if (streamRef.current) { streamRef.current.getTracks().forEach(t => track.stop()); streamRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(track => track.stop()); streamRef.current = null; }
     if (audioContextRef.current) { audioContextRef.current.close(); audioContextRef.current = null; }
     
     setLanguageSelected(false);
     setMessage("");
     setReply("");
-    setIntent("");
     setSuggestedPage("");
     isProcessing.current = false;
   };
@@ -423,5 +416,4 @@ export default function VoicePage() {
       </section>
     </main>
   );
-}
 }
