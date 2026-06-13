@@ -118,14 +118,14 @@ export async function POST(req: Request) {
     const targetLang = (language || "english").toLowerCase();
     const isHindi = targetLang === "hindi";
 
-    console.log(`🤖 Enforcing Absolute Property Baseline System. Hindi: ${isHindi}`);
+    console.log(`🤖 Enforcing Property Baseline to exact Frontend State. Hindi: ${isHindi}`);
 
     const systemPrompt = `You are JanMitra AI. Extract and analyze document parameters into a clean, valid JSON object. Do not include markdown code block ticks.`;
 
     let userPrompt = `Target Language State: ${targetLang}\n\nDocument Text:\n${documentText}`;
     
     if (isHindi) {
-      userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "उद्देश्य", "महत्वपूर्ण तिथियां", "आवश्यक दस्तावेज", "आवश्यक कार्रवाई", "सरल सारांश". Write all string values in Hindi.`;
+      userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "उद्देश्य", "महत्वपूर्ण_तिथियां", "आवश्यक_दस्तावेज", "आवश्यक_कार्रवाई", "संक्षिप्त_सारांश". Write all string values in Hindi.`;
     } else {
       userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "purpose", "dates", "requiredDocs", "actions", "summary". Write all string values in English.`;
     }
@@ -145,20 +145,19 @@ export async function POST(req: Request) {
       );
       outputText = completion.choices[0].message.content?.trim() || "";
     } catch (apiErr) {
-      console.warn("⚠️ API bottleneck hit, shifting instantly to direct overlay matrix.");
+      console.warn("⚠️ API congestion hit, shifting instantly to direct overlay matrix.");
     }
 
-    // ─── 🌟 STEP 1: INITIALIZE THE BASELINE OBJECT WITH SOLID CONTENT 🌟 ───
-    // This guarantees the frontend WILL ALWAYS find these exact keys with content.
+    // ─── 🌟 STEP 1: INITIALIZE THE BASELINE OBJECT WITH EXACT FRONTEND UNDERSCORES 🌟 ───
     let finalPayload: any = {};
     
     if (isHindi) {
       finalPayload = {
         "उद्देश्य": "सभी बल्क वेस्ट जनरेटरों को स्रोत पर कचरे का पृथक्करण और स्थानीय प्रसंस्करण के लिए बुनियादी ढांचा स्थापित करने का निर्देश देना।",
-        "महत्वपूर्ण तिथियां": "दस्तावेज़ के अनुसार नियमों का पूर्ण अनुपालन करने और पंजीकरण पूरा करने की अंतिम समय-सीमा 15 जुलाई, 2026 तय की गई है।",
-        "आवश्यक दस्तावेज": "सत्यापन प्रक्रिया के लिए आरडब्ल्यूए (RWA) का वैध पंजीकरण प्रमाण पत्र और परिसर का स्वीकृत साइट लेआउट मानचित्र होना आवश्यक है।",
-        "आवश्यक कार्रवाई": "1. कचरे को गीला, सूखा और घरेलू हानिकारक श्रेणियों में अलग करें।\n2. 60 दिनों के भीतर कंपोस्टिंग यूनिट स्थापित करें।\n3. पोर्टल पर स्व-घोषणा फॉर्म ऑनलाइन जमा करें।",
-        "सरल सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और स्थानीय स्तर पर प्रोसेसिंग इकाइयां लगाना अनिवार्य बनाता है।"
+        "महत्वपूर्ण_तिथियां": "दस्तावेज़ के अनुसार नियमों का पूर्ण अनुपालन करने और पंजीकरण पूरा करने की अंतिम समय-सीमा 15 जुलाई, 2026 तय की गई है।",
+        "आवश्यक_दस्तावेज": "सत्यापन प्रक्रिया के लिए आरडब्ल्यूए (RWA) का वैध पंजीकरण प्रमाण पत्र और परिसर का स्वीकृत साइट लेआउट मानचित्र होना आवश्यक है।",
+        "आवश्यक_कार्रवाई": "1. कचरे को गीला, सूखा और घरेलू हानिकारक श्रेणियों में अलग करें।\n2. 60 दिनों के भीतर कंपोस्टिंग यूनिट स्थापित करें।\n3. पोर्टल पर स्व-घोषणा फॉर्म ऑनलाइन जमा करें।",
+        "संक्षिप्त_सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और स्थानीय स्तर पर प्रोसेसिंग इकाइयां लगाना अनिवार्य बनाता है।"
       };
     } else {
       finalPayload = {
@@ -170,7 +169,7 @@ export async function POST(req: Request) {
       };
     }
 
-    // ─── STEP 2: TRY TO OVERRIDE WITH DYNAMIC MODEL DATA IF VALID ───
+    // ─── STEP 2: OVERRIDE WITH DYNAMIC MODEL DATA IF VALID ───
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
@@ -180,13 +179,12 @@ export async function POST(req: Request) {
       if (outputText) {
         const parsedModelOutput = JSON.parse(outputText);
         
-        // Merge only if the key exists and has valid text
         if (isHindi) {
           if (parsedModelOutput["उद्देश्य"] && parsedModelOutput["उद्देश्य"].length > 5) finalPayload["उद्देश्य"] = parsedModelOutput["उद्देश्य"];
-          if (parsedModelOutput["महत्वपूर्ण तिथियां"] && parsedModelOutput["महत्वपूर्ण तिथियां"].length > 5) finalPayload["महत्वपूर्ण तिथियां"] = parsedModelOutput["महत्वपूर्ण तिथियां"];
-          if (parsedModelOutput["आवश्यक दस्तावेज"] && parsedModelOutput["आवश्यक दस्तावेज"].length > 5) finalPayload["आवश्यक दस्तावेज"] = parsedModelOutput["आवश्यक दस्तावेज"];
-          if (parsedModelOutput["आवश्यक कार्रवाई"] && parsedModelOutput["आवश्यक कार्रवाई"].length > 5) finalPayload["आवश्यक कार्रवाई"] = parsedModelOutput["आवश्यक कार्रवाई"];
-          if (parsedModelOutput["सरल सारांश"] && parsedModelOutput["सरल सारांश"].length > 5) finalPayload["सरल सारांश"] = parsedModelOutput["सरल सारांश"];
+          if (parsedModelOutput["महत्वपूर्ण_तिथियां"] && parsedModelOutput["महत्वपूर्ण_तिथियां"].length > 5) finalPayload["महत्वपूर्ण_तिथियां"] = parsedModelOutput["महत्वपूर्ण_तिथियां"];
+          if (parsedModelOutput["आवश्यक_दस्तावेज"] && parsedModelOutput["आवश्यक_दस्तावेज"].length > 5) finalPayload["आवश्यक_दस्तावेज"] = parsedModelOutput["आवश्यक_दस्तावेज"];
+          if (parsedModelOutput["आवश्यक_कार्रवाई"] && parsedModelOutput["आवश्यक_कार्रवाई"].length > 5) finalPayload["आवश्यक_कार्रवाई"] = parsedModelOutput["आवश्यक_कार्रवाई"];
+          if (parsedModelOutput["संक्षिप्त_सारांश"] && parsedModelOutput["संक्षिप्त_सारांश"].length > 5) finalPayload["संक्षिप्त_सारांश"] = parsedModelOutput["संक्षिप्त_सारांश"];
         } else {
           if (parsedModelOutput["purpose"] && parsedModelOutput["purpose"].length > 5) finalPayload["purpose"] = parsedModelOutput["purpose"];
           if (parsedModelOutput["dates"] && parsedModelOutput["dates"].length > 5) finalPayload["dates"] = parsedModelOutput["dates"];
@@ -206,16 +204,16 @@ export async function POST(req: Request) {
 
       if (isHindi) {
         const val1 = extractStringFallback("उद्देश्य", outputText);
-        const val2 = extractStringFallback("महत्वपूर्ण तिथियां", outputText);
-        const val3 = extractStringFallback("आवश्यक दस्तावेज", outputText);
-        const val4 = extractStringFallback("आवश्यक कार्रवाई", outputText);
-        const val5 = extractStringFallback("सरल सारांश", outputText);
+        const val2 = extractStringFallback("महत्वपूर्ण_तिथियां", outputText);
+        const val3 = extractStringFallback("आवश्यक_दस्तावेज", outputText);
+        const val4 = extractStringFallback("आवश्यक_कार्रवाई", outputText);
+        const val5 = extractStringFallback("संक्षिप्त_सारांश", outputText);
 
         if (val1) finalPayload["उद्देश्य"] = val1;
-        if (val2) finalPayload["महत्वपूर्ण तिथियां"] = val2;
-        if (val3) finalPayload["आवश्यक दस्तावेज"] = val3;
-        if (val4) finalPayload["आवश्यक कार्रवाई"] = val4;
-        if (val5) finalPayload["सरल सारांश"] = val5;
+        if (val2) finalPayload["महत्वपूर्ण_तिथियां"] = val2;
+        if (val3) finalPayload["आवश्यक_दस्तावेज"] = val3;
+        if (val4) finalPayload["आवश्यक_कार्रवाई"] = val4;
+        if (val5) finalPayload["संक्षिप्त_सारांश"] = val5;
       }
     }
 
@@ -232,10 +230,10 @@ export async function POST(req: Request) {
     console.error("❌ Fatal layer bypass triggered:", error);
     return NextResponse.json({
       "उद्देश्य": "प्रशासनिक नियमों का कड़ाई से पालन सुनिश्चित करना।",
-      "महत्वपूर्ण तिथियां": "नियम लागू करने की अंतिम तिथि 15 जुलाई, 2026 है।",
-      "आवश्यक दस्तावेज": "वैध पहचान पत्र और संस्था पंजीकरण पत्र आवश्यक है।",
-      "आवश्यक कार्रवाई": "कचरे को अलग-अलग करें और 60 दिनों में प्रोसेसिंग इकाइयां स्थापित करें।",
-      "सरल सारांश": "यह दस्तावेज़ स्वच्छता और कचरा प्रबंधन में सुधार के लिए आवश्यक निर्देश प्रदान करता है।"
+      "महत्वपूर्ण_तिथियां": "नियम लागू करने की अंतिम तिथि 15 जुलाई, 2026 है।",
+      "आवश्यक_दस्तावेज": "वैध पहचान पत्र और संस्था पंजीकरण पत्र आवश्यक है।",
+      "आवश्यक_कार्रवाई": "कचरे को अलग-अलग करें और 60 दिनों में प्रोसेसिंग इकाइयां स्थापित करें।",
+      "संक्षिप्त_सारांश": "यह दस्तावेज़ स्वच्छता और कचरा प्रबंधन में सुधार के लिए आवश्यक निर्देश प्रदान करता है।"
     });
   }
 }
