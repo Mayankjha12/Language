@@ -721,7 +721,33 @@ export default function AskAIPage() {
                             : "bg-white/[0.05] border border-white/[0.08] text-blue-100 rounded-tl-none"
                         }`}
                       >
-                        {chat.text}
+                        {/* 🌟 DYNAMIC TAG PARSER: Renders navigation buttons inline without page refresh */}
+                        {(() => {
+                          if (chat.role === "user") return chat.text;
+
+                          const routeMatch = chat.text.match(/\[ROUTE:(schemes|complaints|documents)\]/);
+                          
+                          if (routeMatch) {
+                            const targetTab = routeMatch[1] as Tab;
+                            const cleanText = chat.text.replace(/\[ROUTE:(schemes|complaints|documents)\]/g, "").trim();
+                            
+                            const btnLabel = targetTab === "schemes" ? "🎯 open Discover Schemes" :
+                                             targetTab === "complaints" ? "📝 open Complaint Dashboard" : "📄 open Document Explainer";
+                            
+                            return (
+                              <div className="space-y-3">
+                                <p>{cleanText}</p>
+                                <button
+                                  onClick={() => setActiveTab(targetTab)}
+                                  className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                                >
+                                  {btnLabel} →
+                                </button>
+                              </div>
+                            );
+                          }
+                          return chat.text;
+                        })()}
                       </div>
                     </div>
                   ))}
