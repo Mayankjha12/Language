@@ -7,16 +7,12 @@ export async function POST(req: Request) {
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "No file uploaded" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     let text = "";
-
     const fileNameLower = file.name.toLowerCase();
 
     // 1. Handling Word Document Files (.docx)
@@ -28,22 +24,16 @@ export async function POST(req: Request) {
     else if (fileNameLower.endsWith(".txt")) {
       text = buffer.toString("utf8");
     }
-    // 3. Handling Government PDF Files (.pdf)
-    else if (fileNameLower.endsWith(".pdf")) {
-      text = `GOVERNMENT OF NCT OF DELHI Order Notice. Section 357-A DMC Act. Bulk Waste Generators must process and segregate waste at source within 60 days. Final Compliance Target Deadline: 15th July, 2026. Action Required: Sort into wet, dry, and hazardous streams. Establish composting facilities locally. Default Penalty Fine: INR 25,000.`;
-    }
-    // 4. Smart Mock OCR Bridge for Images (.jpg, .jpeg, .png)
-    else if (
-      fileNameLower.endsWith(".png") || 
-      fileNameLower.endsWith(".jpg") || 
-      fileNameLower.endsWith(".jpeg")
-    ) {
-      // Dynamic mock context bridge for image snaps to keep the hackathon flow bulletproof
-      text = `GOVERNMENT OF NCT OF DELHI Order Notice. Section 357-A DMC Act. Bulk Waste Generators must process and segregate waste at source within 60 days. Final Compliance Target Deadline: 15th July, 2026. Action Required: Sort into wet, dry, and hazardous streams. Establish composting facilities locally. Default Penalty Fine: INR 25,000.`;
+    // 3. PDFs & Images - Hardcoded text hataya gaya
+    else if (fileNameLower.endsWith(".pdf") || fileNameLower.match(/\.(jpg|jpeg|png)$/)) {
+      // Ab yahan koi fake text nahi hai. 
+      // Agar tumne PDF parsing libraries install nahi ki hain, 
+      // toh AI ko file ka context bhejna hoga.
+      text = `DOCUMENT_CONTENT_READY: The user has uploaded a file named ${file.name}. Please analyze this file thoroughly based on the provided image/pdf context.`;
     }
     else {
       return NextResponse.json(
-        { error: "Only PDF, JPG, PNG, DOCX and TXT files are supported" },
+        { error: "Unsupported file format" },
         { status: 400 }
       );
     }
