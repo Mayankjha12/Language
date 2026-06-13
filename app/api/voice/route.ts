@@ -20,11 +20,11 @@ export async function POST(req: Request) {
       messages: [
         { 
           role: "system", 
-          content: `You are Maya, an Indian government voice assistant. Reply in the same language as the user. Keep it extremely brief (max 2 sentences). Output ONLY valid JSON: {"reply": "text", "intent": "schemes" | "complaints" | "documents" | "none"}` 
+          content: `You are Maya, an Indian government voice assistant. Reply in the same language as the user. Keep it extremely brief (max 2 sentences). Output ONLY valid JSON, no markdown: {"reply": "text", "intent": "schemes" | "complaints" | "documents" | "none"}` 
         },
         { role: "user", content: `Query: ${message} | Language: ${language}` }
       ],
-      response_format: { type: "json_object" }
+      // response_format line ko comment out kar do agar OpenRouter use kar rahe ho
     });
 
     const content = completion.choices[0].message.content;
