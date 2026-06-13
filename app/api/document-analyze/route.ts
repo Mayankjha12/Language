@@ -120,14 +120,20 @@ export async function POST(req: Request) {
 
     console.log(`🤖 Enforcing Property Baseline to exact Frontend State. Hindi: ${isHindi}`);
 
-    const systemPrompt = `You are JanMitra AI. Extract and analyze document parameters into a clean, valid JSON object. Do not include markdown code block ticks.`;
+    if (!documentText || documentText.trim() === "") {
+      return NextResponse.json({ error: "No document text provided" }, { status: 400 });
+    }
+
+    const systemPrompt = `You are JanMitra AI, an expert citizen services document intelligence analyzer.
+Extract and analyze the user's input document parameters into a clean, strictly valid JSON object matching the exact requested key structure. 
+Do not talk, do not add introductory text, and do not wrap the response in markdown code blocks like \`\`\`json. Only output the raw JSON object.`;
 
     let userPrompt = `Target Language State: ${targetLang}\n\nDocument Text:\n${documentText}`;
     
     if (isHindi) {
-      userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "उद्देश्य", "महत्वपूर्ण_तिथियां", "आवश्यक_दस्तावेज", "आवश्यक_कार्रवाई", "संक्षिप्त_सारांश". Write all string values in Hindi.`;
+      userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "उद्देश्य", "महत्वपूर्ण_तिथियां", "आवश्यक_दस्तावेज", "आवश्यक_कार्रवाई", "संक्षिप्त_सारांश". Write all string values dynamically extracted from the document in Hindi.`;
     } else {
-      userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "purpose", "dates", "requiredDocs", "actions", "summary". Write all string values in English.`;
+      userPrompt += `\n\nCRITICAL REQUIRED STRUCTURE:\nReturn a JSON object with exactly these keys: "purpose", "dates", "requiredDocs", "actions", "summary". Write all string values dynamically extracted from the document in English.`;
     }
 
     let outputText = "";
@@ -145,79 +151,89 @@ export async function POST(req: Request) {
       );
       outputText = completion.choices[0].message.content?.trim() || "";
     } catch (apiErr) {
-      console.warn("⚠️ API congestion hit, shifting instantly to direct overlay matrix.");
+      console.warn("⚠️ Sarvam API timeout or congestion hit.");
     }
 
-    // ─── 🌟 STEP 1: INITIALIZE THE BASELINE OBJECT WITH EXACT FRONTEND UNDERSCORES 🌟 ───
+    // ─── 🌟 STEP 1: INITIALIZE DEFAULT BASELINE SAFETY OBJECTS 🌟 ───
     let finalPayload: any = {};
-    
     if (isHindi) {
       finalPayload = {
-        "उद्देश्य": "सभी बल्क वेस्ट जनरेटरों को स्रोत पर कचरे का पृथक्करण और स्थानीय प्रसंस्करण के लिए बुनियादी ढांचा स्थापित करने का निर्देश देना।",
-        "महत्वपूर्ण_तिथियां": "दस्तावेज़ के अनुसार नियमों का पूर्ण अनुपालन करने और पंजीकरण पूरा करने की अंतिम समय-सीमा 15 जुलाई, 2026 तय की गई है।",
-        "आवश्यक_दस्तावेज": "सत्यापन प्रक्रिया के लिए आरडब्ल्यूए (RWA) का वैध पंजीकरण प्रमाण पत्र और परिसर का स्वीकृत साइट लेआउट मानचित्र होना आवश्यक है।",
-        "आवश्यक_कार्रवाई": "1. कचरे को गीला, सूखा और घरेलू हानिकारक श्रेणियों में अलग करें।\n2. 60 दिनों के भीतर कंपोस्टिंग यूनिट स्थापित करें।\n3. पोर्टल पर स्व-घोषणा फॉर्म ऑनलाइन जमा करें।",
-        "संक्षिप्त_सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और स्थानीय स्तर पर प्रोसेसिंग इकाइयां लगाना अनिवार्य बनाता है।"
+        "उद्देश्य": "दस्तावेज़ का उद्देश्य लोड नहीं किया जा सका। कृपया मैन्युअल रूप से जांचें।",
+        "महत्वपूर्ण_तिथियां": "तिथियां उपलब्ध नहीं हैं या विश्लेषण विफल रहा।",
+        "आवश्यक_दस्तावेज": "दस्तावेज़ों की सूची प्राप्त नहीं की जा सकी।",
+        "आवश्यक_कार्रवाई": "कृपया आधिकारिक अधिसूचना के मुख्य निर्देशों का पालन करें।",
+        "संक्षिप्त_सारांश": "इस दस्तावेज़ का विश्लेषण सर्वर लोड के कारण पूर्ण नहीं हो पाया।"
       };
     } else {
       finalPayload = {
-        "purpose": "To mandate waste segregation and processing for large residential and commercial entities in Delhi.",
-        "dates": "The final target for system compliance is locked on July 15, 2026.",
-        "requiredDocs": "Requires valid RWA Registration Certificate and approved site layout blueprints.",
-        "actions": "1. Segregate waste at source. 2. Set up composting infrastructure within 60 days. 3. Complete portal validation.",
-        "summary": "This order requires large residential and commercial groups in Delhi to segregate waste and set up processing units within 60 days."
+        "purpose": "Purpose analysis extraction defaulted. Please review manually.",
+        "dates": "Important timelines could not be extracted cleanly.",
+        "requiredDocs": "Required document specifications not found.",
+        "actions": "Please refer to the actionable guidelines mentioned in the main copy.",
+        "summary": "Document processing timed out or failed to parse dynamic fields cleanly."
       };
     }
 
     // ─── STEP 2: OVERRIDE WITH DYNAMIC MODEL DATA IF VALID ───
-    if (outputText.includes("{")) {
+    if (outputText && outputText.includes("{")) {
+      // Isolate JSON substring to strip accidental system talk prefixes
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
-    }
-    outputText = outputText.replace(/\n/g, " ").replace(/\r/g, " ").trim();
-
-    try {
-      if (outputText) {
+      
+      try {
         const parsedModelOutput = JSON.parse(outputText);
         
         if (isHindi) {
-          if (parsedModelOutput["उद्देश्य"] && parsedModelOutput["उद्देश्य"].length > 5) finalPayload["उद्देश्य"] = parsedModelOutput["उद्देश्य"];
-          if (parsedModelOutput["महत्वपूर्ण_तिथियां"] && parsedModelOutput["महत्वपूर्ण_तिथियां"].length > 5) finalPayload["महत्वपूर्ण_तिथियां"] = parsedModelOutput["महत्वपूर्ण_तिथियां"];
-          if (parsedModelOutput["आवश्यक_दस्तावेज"] && parsedModelOutput["आवश्यक_दस्तावेज"].length > 5) finalPayload["आवश्यक_दस्तावेज"] = parsedModelOutput["आवश्यक_दस्तावेज"];
-          if (parsedModelOutput["आवश्यक_कार्रवाई"] && parsedModelOutput["आवश्यक_कार्रवाई"].length > 5) finalPayload["आवश्यक_कार्रवाई"] = parsedModelOutput["आवश्यक_कार्रवाई"];
-          if (parsedModelOutput["संक्षिप्त_सारांश"] && parsedModelOutput["संक्षिप्त_सारांश"].length > 5) finalPayload["संक्षिप्त_सारांश"] = parsedModelOutput["संक्षिप्त_सारांश"];
+          if (parsedModelOutput["उद्देश्य"]) finalPayload["उद्देश्य"] = parsedModelOutput["उद्देश्य"];
+          if (parsedModelOutput["महत्वपूर्ण_तिथियां"]) finalPayload["महत्वपूर्ण_तिथियां"] = parsedModelOutput["महत्वपूर्ण_तिथियां"];
+          if (parsedModelOutput["आवश्यक_दस्तावेज"]) finalPayload["आवश्यक_दस्तावेज"] = parsedModelOutput["आवश्यक_दस्तावेज"];
+          if (parsedModelOutput["आवश्यक_कार्रवाई"]) finalPayload["आवश्यक_कार्रवाई"] = parsedModelOutput["आवश्यक_कार्रवाई"];
+          if (parsedModelOutput["संक्षिप्त_सारांश"]) finalPayload["संक्षिप्त_सारांश"] = parsedModelOutput["संक्षिप्त_सारांश"];
         } else {
-          if (parsedModelOutput["purpose"] && parsedModelOutput["purpose"].length > 5) finalPayload["purpose"] = parsedModelOutput["purpose"];
-          if (parsedModelOutput["dates"] && parsedModelOutput["dates"].length > 5) finalPayload["dates"] = parsedModelOutput["dates"];
-          if (parsedModelOutput["requiredDocs"] && parsedModelOutput["requiredDocs"].length > 5) finalPayload["requiredDocs"] = parsedModelOutput["requiredDocs"];
-          if (parsedModelOutput["actions"] && parsedModelOutput["actions"].length > 5) finalPayload["actions"] = parsedModelOutput["actions"];
-          if (parsedModelOutput["summary"] && parsedModelOutput["summary"].length > 5) finalPayload["summary"] = parsedModelOutput["summary"];
+          if (parsedModelOutput["purpose"]) finalPayload["purpose"] = parsedModelOutput["purpose"];
+          if (parsedModelOutput["dates"]) finalPayload["dates"] = parsedModelOutput["dates"];
+          if (parsedModelOutput["requiredDocs"]) finalPayload["requiredDocs"] = parsedModelOutput["requiredDocs"];
+          if (parsedModelOutput["actions"]) finalPayload["actions"] = parsedModelOutput["actions"];
+          if (parsedModelOutput["summary"]) finalPayload["summary"] = parsedModelOutput["summary"];
         }
-      }
-    } catch (e) {
-      console.warn("⚠️ Fallback active. Merging fields via regex patterns.");
-      
-      const extractStringFallback = (key: string, raw: string): string => {
-        const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
-        const match = raw.match(regex);
-        return match ? match[1].replace(/[*#`"]/g, "").trim() : "";
-      };
+      } catch (e) {
+        console.warn("⚠️ JSON parse crashed. Initiating regex fallback capture for both language states.");
+        
+        // Dynamic string extractor helper via regex arrays
+        const extractStringFallback = (key: string, raw: string): string => {
+          const regex = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
+          const match = raw.replace(/[\n\r]/g, " ").match(regex);
+          return match ? match[1].replace(/[*#`"]/g, "").trim() : "";
+        };
 
-      if (isHindi) {
-        const val1 = extractStringFallback("उद्देश्य", outputText);
-        const val2 = extractStringFallback("महत्वपूर्ण_तिथियां", outputText);
-        const val3 = extractStringFallback("आवश्यक_दस्तावेज", outputText);
-        const val4 = extractStringFallback("आवश्यक_कार्रवाई", outputText);
-        const val5 = extractStringFallback("संक्षिप्त_सारांश", outputText);
+        if (isHindi) {
+          const val1 = extractStringFallback("उद्देश्य", outputText);
+          const val2 = extractStringFallback("महत्वपूर्ण_तिथियां", outputText);
+          const val3 = extractStringFallback("आवश्यक_दस्तावेज", outputText);
+          const val4 = extractStringFallback("आवश्यक_कार्रवाई", outputText);
+          const val5 = extractStringFallback("संक्षिप्त_सारांश", outputText);
 
-        if (val1) finalPayload["उद्देश्य"] = val1;
-        if (val2) finalPayload["महत्वपूर्ण_तिथियां"] = val2;
-        if (val3) finalPayload["आवश्यक_दस्तावेज"] = val3;
-        if (val4) finalPayload["आवश्यक_कार्रवाई"] = val4;
-        if (val5) finalPayload["संक्षिप्त_सारांश"] = val5;
+          if (val1) finalPayload["उद्देश्य"] = val1;
+          if (val2) finalPayload["महत्वपूर्ण_तिथियां"] = val2;
+          if (val3) finalPayload["आवश्यक_दस्तावेज"] = val3;
+          if (val4) finalPayload["आवश्यक_कार्रवाई"] = val4;
+          if (val5) finalPayload["संक्षिप्त_सारांश"] = val5;
+        } else {
+          const val1 = extractStringFallback("purpose", outputText);
+          const val2 = extractStringFallback("dates", outputText);
+          const val3 = extractStringFallback("requiredDocs", outputText);
+          const val4 = extractStringFallback("actions", outputText);
+          const val5 = extractStringFallback("summary", outputText);
+
+          if (val1) finalPayload["purpose"] = val1;
+          if (val2) finalPayload["dates"] = val2;
+          if (val3) finalPayload["requiredDocs"] = val3;
+          if (val4) finalPayload["actions"] = val4;
+          if (val5) finalPayload["summary"] = val5;
+        }
       }
     }
 
-    // ─── STEP 3: CLEANUP SPURIOUS MARKS ───
+    // ─── STEP 3: SANITIZE ERRATIC SYNTAX HASH MARKS ───
     Object.keys(finalPayload).forEach((key) => {
       if (typeof finalPayload[key] === "string") {
         finalPayload[key] = finalPayload[key].replace(/[*#`"]/g, "").trim();
@@ -227,17 +243,10 @@ export async function POST(req: Request) {
     return NextResponse.json(finalPayload);
 
   } catch (error) {
-    console.error("❌ Fatal layer bypass triggered:", error);
-    return NextResponse.json({
-      "उद्देश्य": "प्रशासनिक नियमों का कड़ाई से पालन सुनिश्चित करना।",
-      "महत्वपूर्ण_तिथियां": "नियम लागू करने की अंतिम तिथि 15 जुलाई, 2026 है।",
-      "आवश्यक_दस्तावेज": "वैध पहचान पत्र और संस्था पंजीकरण पत्र आवश्यक है।",
-      "आवश्यक_कार्रवाई": "कचरे को अलग-अलग करें और 60 दिनों में प्रोसेसिंग इकाइयां स्थापित करें।",
-      "संक्षिप्त_सारांश": "यह दस्तावेज़ स्वच्छता और कचरा प्रबंधन में सुधार के लिए आवश्यक निर्देश प्रदान करता है।"
-    });
+    console.error("❌ Fatal crash in analyzer master route handler:", error);
+    return NextResponse.json({ error: "Fatal layer processing bypass" }, { status: 500 });
   }
 }
-
 
 
 
