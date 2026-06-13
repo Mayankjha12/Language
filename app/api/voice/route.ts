@@ -46,7 +46,8 @@ Example Template:
         model: "sarvam-30b",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: message }
+          // 🌟 FIXED: Passing both user query AND selected language token context so the model auto-adapts perfectly
+          { role: "user", content: `User Query: "${message}" | Selected Language Code Context: ${clientLang}` }
         ],
         temperature: 0.2,
       });
