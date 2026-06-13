@@ -5,7 +5,6 @@ import axios from "axios";
 
 type Tab = "home" | "schemes" | "complaints" | "documents" | "help";
 
-// Complete Localized Dual-Language Mapping Matrices for Indian States
 const indianStatesEn = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
   "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
@@ -22,7 +21,6 @@ const indianStatesHi = [
   "उत्तराखंड", "पश्चिम बंगाल", "दिल्ली", "जम्मू और कश्मीर"
 ];
 
-// Unified On-the-Fly Variable Dictionary Converter Matrix
 const uiTranslationMap: Record<string, Record<string, string>> = {
   english: {
     student: "Student", farmer: "Farmer", worker: "Worker", business: "Business",
@@ -48,7 +46,6 @@ const uiTranslationMap: Record<string, Record<string, string>> = {
   }
 };
 
-// Core visual style helpers shared across dashboard button components
 const baseCta = "w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ease-out active:scale-[0.98]";
 const purpleCta = "bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)]";
 const roseCta = "bg-gradient-to-r from-[#e11d48] to-[#be123c] hover:from-[#f43f5e] hover:to-[#e11d48] shadow-[0_4px_15px_rgba(225,29,72,0.3)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.4)]";
@@ -59,9 +56,13 @@ const ghostBtn = "rounded-xl border border-white/10 bg-white/[0.06] hover:bg-whi
 export default function AskAIPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [message, setMessage] = useState("");
-  const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
   const [helpLanguage, setHelpLanguage] = useState("english");
+
+  // 🌟 FIX: Premium Array Thread State to completely secure chat logs from keyboard blur events
+  const [chatHistory, setChatHistory] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
+    { role: "assistant", text: "नमस्ते! मैं JanMitra AI हूँ। मैं आपकी नागरिक समस्याओं, सरकारी योजनाओं और दस्तावेज़ीकरण में मदद कर सकता हूँ। आप किस विषय पर चर्चा करना चाहेंगे?" }
+  ]);
 
   const [schemeForm, setSchemeForm] = useState({
     age: "", income: "", occupation: "", category: "", gender: "", state: "",
@@ -83,13 +84,11 @@ export default function AskAIPage() {
   const [language, setLanguage] = useState("english");
   const [complaintLoading, setComplaintLoading] = useState(false);
 
-  // Core global file and tracking states
   const [file, setFile] = useState<File | null>(null);
   const [documentLoading, setDocumentLoading] = useState(false);
   const [docLanguage, setDocLanguage] = useState("english");
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
 
-  // Multi-lingual Text Transformer Engine Function
   const translateCardElement = (scheme: any) => {
     if (schemeForm.language !== "hindi") return scheme;
     const nameStr = scheme.name || "";
@@ -109,13 +108,25 @@ export default function AskAIPage() {
     return scheme;
   };
 
+  // 🌟 FIX: Updated askAI architecture to properly cycle message values into chat threads
   const askAI = async () => {
-    try { 
-      setLoading(true); 
-      const res = await axios.post("/api/chat", { message, language: helpLanguage }); 
-      setReply(res.data.reply); 
+    if (!message.trim()) return;
+    
+    const userQuery = message.trim();
+    setMessage(""); 
+    
+    setChatHistory(prev => [...prev, { role: "user", text: userQuery }]);
+    setLoading(true);
+
+    try {
+      const res = await axios.post("/api/chat", { message: userQuery });
+      setChatHistory(prev => [...prev, { role: "assistant", text: res.data.reply }]);
+    } catch (error) {
+      console.log(error);
+      setChatHistory(prev => [...prev, { role: "assistant", text: "सिस्टम कनेक्शन त्रुटि। कृपया पुनः प्रयास करें।" }]);
+    } finally {
+      setLoading(false);
     }
-    catch (error) { console.log(error); } finally { setLoading(false); }
   };
 
   const handleSchemeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -154,7 +165,6 @@ export default function AskAIPage() {
     } catch (error) { console.log(error); } finally { setComplaintLoading(false); }
   };
 
-  // Safe Dynamic File Handler Pipeline
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -196,7 +206,6 @@ export default function AskAIPage() {
     { tab: "help" as Tab, icon: "💬", accent: "blue", badge: null, title: "Talk to JanMitra", description: "Ask anything — pensions, certificates, RTI, voter ID, ration card, or any civic grievance.", steps: ["Type question", "AI responds", "Take action"], cta: "Start Chatting", iconBg: "bg-[rgba(59,130,246,0.15)] border-[rgba(59,130,246,0.25)]", badgeClass: "", glow: "bg-[radial-gradient(ellipse_at_0%_0%,rgba(59,130,246,0.15)_0%,transparent_60%)]", hoverBorder: "hover:border-[rgba(59,130,246,0.4)]", btnClass: "bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)]" }
   ];
 
-  // FIXED: Declared precisely before the main render block to secure top-level compiler scope variables
   const langKey = schemeForm.language === "hindi" ? "hindi" : "english";
   const dict = uiTranslationMap[langKey];
   const statesArrayToRender = schemeForm.language === "hindi" ? indianStatesHi : indianStatesEn;
@@ -397,7 +406,6 @@ export default function AskAIPage() {
                     </div>
                   )}
 
-                  {/* AI Recommendation Box */}
                   {aiExplanation && (
                     <div className="rounded-2xl border border-[rgba(139,92,246,0.25)] bg-[rgba(139,92,246,0.08)] p-5 mt-6 animate-[fadeIn_0.3s_ease-out]">
                       <h3 className="font-semibold mb-3 text-sm text-purple-300">
@@ -410,10 +418,8 @@ export default function AskAIPage() {
               </div>
             )}
 
-            {/* COMPLAINTS */}
             {activeTab === "complaints" && (
               <div className="grid lg:grid-cols-2 gap-6">
-                {/* LEFT SIDE PANEL: ASSISTANT CONSOLE */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                     <h2 className="text-2xl sm:text-3xl font-bold">
@@ -491,7 +497,6 @@ export default function AskAIPage() {
                   </button>
                 </div>
 
-                {/* RIGHT SIDE PANEL: AI OUTPUT DISPLAY */}
                 <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-6">
                     {language === "hindi" ? "एआई जनरेटेड शिकायत" : "AI Generated Complaint"}
@@ -545,7 +550,7 @@ export default function AskAIPage() {
                             <p key={index} className="block"><span className="text-rose-400 font-bold">{index + 1}.</span> {item}</p>
                           ))
                         ) : (
-                          <p className="text-white/40">{language === "hindi" ? "निर्देश यहाँ दिखाई देंगे।" : "Recommendations will appear here."}</p>
+                          <p className="text-white/40">{language === "hindi" ? "निर्देश यहाँ दिखाई लगेंगे।" : "Recommendations will appear here."}</p>
                         )}
                       </div>
                     </div>
@@ -554,175 +559,210 @@ export default function AskAIPage() {
               </div>
             )}
 
-            
+            {/* DOCUMENTS TAB */}
+            {activeTab === "documents" && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                    <h2 className="text-2xl sm:text-3xl font-bold">
+                      {docLanguage === "hindi" ? "दस्तावेज़ विश्लेषक" : "Document Explainer"}
+                    </h2>
+                    <select
+                      name="docLanguage"
+                      value={docLanguage}
+                      onChange={(e) => setDocLanguage(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-emerald-300 font-semibold"
+                    >
+                      <option value="english">English Summary</option>
+                      <option value="hindi">हिंदी सारांश</option>
+                    </select>
+                  </div>
 
-                        {/* DOCUMENTS TAB */}
-{activeTab === "documents" && (
-  <div className="grid lg:grid-cols-2 gap-6">
-    {/* LEFT CONSOLE */}
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold">
-          {docLanguage === "hindi" ? "दस्तावेज़ विश्लेषक" : "Document Explainer"}
-        </h2>
-        <select
-          name="docLanguage"
-          value={docLanguage}
-          onChange={(e) => setDocLanguage(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-emerald-300 font-semibold"
-        >
-          <option value="english">English Summary</option>
-          <option value="hindi">हिंदी सारांश</option>
-        </select>
-      </div>
-
-      <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-pointer relative">
-        <input
-          type="file"
-          accept=".txt,.pdf,.docx,.png,.jpg,.jpeg"
-          onChange={handleFileChange}
-          className="absolute inset-0 opacity-0 cursor-pointer"
-        />
-        <div className="text-4xl mb-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">
-          📄
-        </div>
-        <p className="text-white/80 font-medium text-sm mb-1">
-          {file
-            ? `Selected: ${file.name}`
-            : docLanguage === "hindi"
-            ? "अपनी .pdf, .txt, .png, या .jpg फ़ाइल यहाँ अपलोड करें"
-            : "Drag & drop your government file here"}
-        </p>
-        <p className="text-white/40 text-xs">
-          Supported Formats: PDF, PNG, JPG, TXT, DOCX
-        </p>
-      </div>
-
-      <button
-        onClick={handleAnalyze}
-        disabled={documentLoading}
-        className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white mt-8 disabled:opacity-50`}
-      >
-        {documentLoading
-          ? docLanguage === "hindi"
-            ? "विश्लेषण जारी है..."
-            : "Analyzing..."
-          : docLanguage === "hindi"
-          ? "दस्तावेज़ का विश्लेषण करें →"
-          : "Analyze Document →"}
-      </button>
-    </div>
-
-    {/* RIGHT CONSOLE - INSIGHT RENDERING STRIPS */}
-    <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6">
-        {docLanguage === "hindi" ? "एआई सारांश" : "AI Summary"}
-      </h2>
-
-      <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
-        {!analysisResult && !documentLoading && (
-          <p className="text-white/45 text-sm">
-            {docLanguage === "hindi"
-              ? "विवरण देखने के लिए फ़ाइल अपलोड करें।"
-              : "Upload a file to preview extracted metadata analysis logs."}
-          </p>
-        )}
-
-        {documentLoading && (
-          <div className="text-sm text-white/50 animate-pulse text-center py-10">
-            {docLanguage === "hindi"
-              ? "सरकारी दस्तावेज़ का विश्लेषण किया जा रहा है..."
-              : "Analyzing document structures..."}
-          </div>
-        )}
-
-        {analysisResult && (
-          <>
-            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                {docLanguage === "hindi" ? "उद्देश्य" : "Purpose"}
-              </h3>
-              <p className="text-white/70 text-sm leading-relaxed">
-                {analysisResult["उद्देश्य"] || analysisResult.purpose}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                {docLanguage === "hindi"
-                  ? "महत्वपूर्ण तिथियां"
-                  : "Important Dates"}
-              </h3>
-              <p className="text-white/70 text-sm leading-relaxed">
-                {analysisResult["महत्वपूर्ण_तिथियां"] || analysisResult.dates}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                {docLanguage === "hindi"
-                  ? "आवश्यक दस्तावेज"
-                  : "Required Documents"}
-              </h3>
-              <p className="text-white/70 text-sm leading-relaxed">
-                {analysisResult["आवश्यक_दस्तावेज"] ||
-                  analysisResult.requiredDocs}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                {docLanguage === "hindi"
-                  ? "आवश्यक कार्रवाई"
-                  : "Actions Needed"}
-              </h3>
-              <p className="text-white/70 text-sm leading-relaxed">
-                {analysisResult["आवश्यक_कार्रवाई"] ||
-                  analysisResult.actions}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                {docLanguage === "hindi" ? "सरल सारांश" : "Simple Summary"}
-              </h3>
-              <p className="text-white/90 text-sm font-medium leading-relaxed">
-                {analysisResult["संक्षिप्त_सारांश"] ||
-                  analysisResult.summary}
-              </p>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-
-
-            {/* HELP / MULTI-LINGUAL CHAT DISPLAY */}
-            {activeTab === "help" && (
-              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8 max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                  <h2 className="text-2xl font-bold">Chat with JanMitra</h2>
-                  <select value={helpLanguage} onChange={(e) => setHelpLanguage(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-blue-400 font-semibold outline-none text-sm">
-                    <option value="english">English Bot</option>
-                    <option value="hindi">हिंदी बॉट</option>
-                  </select>
-                </div>
-                <div className="space-y-4 mb-6 min-h-[250px] max-h-[400px] overflow-y-auto border border-white/5 bg-white/[0.02] p-5 rounded-2xl custom-scrollbar">
-                  {reply ? (
-                    <div className="space-y-4">
-                      <div className="text-sm bg-white/5 border border-white/10 p-4 rounded-xl max-w-[85%] ml-auto text-white/90">{message}</div>
-                      <div className="text-sm bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl max-w-[85%] text-blue-200 whitespace-pre-wrap">{reply}</div>
+                  <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-pointer relative">
+                    <input
+                      type="file"
+                      accept=".txt,.pdf,.docx,.png,.jpg,.jpeg"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    <div className="text-4xl mb-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors">
+                      📄
                     </div>
-                  ) : (
-                    <p className="text-white/30 text-sm">Ask about any civic grievance or government services...</p>
+                    <p className="text-white/80 font-medium text-sm mb-1">
+                      {file
+                        ? `Selected: ${file.name}`
+                        : docLanguage === "hindi"
+                        ? "अपनी .pdf, .txt, .png, या .jpg फ़ाइल यहाँ अपलोड करें"
+                        : "Drag & drop your government file here"}
+                    </p>
+                    <p className="text-white/40 text-xs">
+                      Supported Formats: PDF, PNG, JPG, TXT, DOCX
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={documentLoading}
+                    className={`${baseCta} bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white mt-8 disabled:opacity-50`}
+                  >
+                    {documentLoading
+                      ? docLanguage === "hindi"
+                        ? "विश्लेषण जारी है..."
+                        : "Analyzing..."
+                      : docLanguage === "hindi"
+                      ? "दस्तावेज़ का विश्लेषण करें →"
+                      : "Analyze Document →"}
+                  </button>
+                </div>
+
+                <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6">
+                    {docLanguage === "hindi" ? "एआई सारांश" : "AI Summary"}
+                  </h2>
+
+                  <div className="space-y-5 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
+                    {!analysisResult && !documentLoading && (
+                      <p className="text-white/45 text-sm">
+                        {docLanguage === "hindi"
+                          ? "विवरण देखने के लिए फ़ाइल अपलोड करें।"
+                          : "Upload a file to preview extracted metadata analysis logs."}
+                      </p>
+                    )}
+
+                    {documentLoading && (
+                      <div className="text-sm text-white/50 animate-pulse text-center py-10">
+                        {docLanguage === "hindi"
+                          ? "सरकारी दस्तावेज़ का विश्लेषण किया जा रहा है..."
+                          : "Analyzing document structures..."}
+                      </div>
+                    )}
+
+                    {analysisResult && (
+                      <>
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "उद्देश्य" : "Purpose"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["उद्देश्य"] || analysisResult.purpose}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां" : "Important Dates"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["महत्वपूर्ण_तिथियां"] || analysisResult.dates}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक दस्तावेज" : "Required Documents"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["आवश्यक_दस्तावेज"] || analysisResult.requiredDocs}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "आवश्यक कार्रवाई" : "Actions Needed"}
+                          </h3>
+                          <p className="text-white/70 text-sm leading-relaxed">
+                            {analysisResult["आवश्यक_कार्रवाई"] || analysisResult.actions}
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                            {docLanguage === "hindi" ? "सरल सारांश" : "Simple Summary"}
+                          </h3>
+                          <p className="text-white/90 text-sm font-medium leading-relaxed">
+                            {analysisResult["संक्षिप्त_सारांश"] || analysisResult.summary}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* HELP / PREMIUM MULTI-LINGUAL LIVE CHAT INTERFACE */}
+            {activeTab === "help" && (
+              <div className="rounded-[24px] border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-w-4xl mx-auto flex flex-col h-[520px] overflow-hidden animate-[fadeIn_0.3s_ease-out]">
+                
+                {/* Premium Header Strip */}
+                <div className="px-6 py-4 border-b border-white/[0.08] bg-white/[0.02] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-xl shadow-inner">💬</div>
+                    <div>
+                      <h2 className="text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">JanMitra AI Assistant</h2>
+                      <p className="text-xs text-emerald-400 flex items-center gap-1.5 font-medium mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Auto-detects Hindi & English
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Real-time Dynamic Thread Message Stream Frame */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#030611]/50 custom-scrollbar">
+                  {chatHistory.map((chat, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`flex w-full items-start ${chat.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div 
+                        className={`max-w-[80%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-md font-sans ${
+                          chat.role === "user" 
+                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-none border border-blue-500/30" 
+                            : "bg-white/[0.05] border border-white/[0.08] text-blue-100 rounded-tl-none"
+                        }`}
+                      >
+                        {chat.text}
+                      </div>
+                    </div>
+                  ))}
+
+                  {loading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl rounded-tl-none px-5 py-3.5 flex items-center gap-2 text-sm text-blue-400/70 font-medium animate-pulse">
+                        <span className="flex space-x-1">
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
+                        </span>
+                        JanMitra is analyzing...
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div className="flex gap-3">
-                  <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Type your query..." className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-5 py-4 text-white outline-none focus:border-blue-500" />
-                  <button onClick={askAI} className={`px-8 ${blueCta} text-white font-bold h-full`}>{loading ? "Thinking..." : "Send"}</button>
+
+                {/* Embedded Premium Input Dock Core Bar Console */}
+                <div className="p-4 border-t border-white/[0.08] bg-white/[0.02]">
+                  <div className="relative flex items-center bg-white/[0.04] border border-white/[0.08] rounded-2xl focus-within:border-blue-500/50 focus-within:bg-white/[0.06] transition-all duration-300">
+                    <input 
+                      type="text" 
+                      value={message} 
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") askAI(); }}
+                      placeholder="Type query in Hindi or English (e.g., राशन कार्ड कैसे बनवाएं?)..." 
+                      className="w-full bg-transparent px-5 py-4 text-sm text-white outline-none placeholder-white/30 pr-14" 
+                    />
+                    <button 
+                      onClick={askAI}
+                      disabled={loading || !message.trim()}
+                      className="absolute right-2 p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all duration-200 disabled:opacity-30 disabled:hover:bg-blue-600 shadow-md flex items-center justify-center active:scale-95 h-9 w-9"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+
               </div>
             )}
           </div>
