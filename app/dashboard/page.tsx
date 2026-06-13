@@ -6,221 +6,245 @@ import {
   FileText,
   ShieldCheck,
   Sparkles,
-} from "lucide-react";
-import { MovingCard, MovingCardsContainer } from "@/components/ui/moving-cards";
+} from "lucide-react";import { motion } from "framer-motion";
 
 export default function DashboardPage() {
-
   return (
     <main className="min-h-screen bg-[#050816] text-white">
-      <section className="max-w-7xl mx-auto px-6 py-10">
+      <section className="max-w-7xl mx-auto px-6 py-8">
 
         {/* HERO */}
-        <div className="rounded-[40px] border border-white/10 bg-white/5 p-10 relative overflow-hidden">
-
-          <div className="absolute w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-[150px] top-[-100px] right-[-100px]" />
+       <motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className="max-w-5xl mx-auto rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6 relative overflow-hidden"
+>
+          <div className="absolute w-[280px] h-[280px] rounded-full bg-purple-500/20 blur-[90px] top-[-80px] right-[-80px]" />
 
           <div className="relative z-10">
 
-            <p className="uppercase tracking-[0.3em] text-purple-300 text-sm mb-5">
-              JanMitra AI
-            </p>
-
-            <h1 className="text-6xl font-bold leading-tight max-w-4xl">
-              Your AI-powered
-              <br />
-              Government Assistant
-            </h1>
-
-            <p className="text-gray-400 text-xl mt-6 max-w-2xl leading-relaxed">
-              Discover schemes, understand documents,
-              file complaints and interact with government
-              services in your own language.
-            </p>
-
-            <div className="flex flex-wrap gap-5 mt-10">
-
+        <h1 className="text-4xl md:text-5xl font-black leading-none tracking-tight">
+  Your AI-Powered Government Assistant
+</h1>
+<p className="text-slate-300 text-base md:text-lg mt-2 max-w-4xl leading-relaxed">
+  Discover schemes, understand documents, file complaints, and
+  interact with government services in your own language.
+</p>
+            <div className="flex flex-wrap gap-3 mt-3">
               <Link href="/voice">
-
-                <button className="px-8 py-4 rounded-full bg-gradient-to-r from-purple-500 to-blue-600 hover:scale-105 transition-all flex items-center gap-3">
-
-                  <Mic />
-
+               <button
+  className="
+  px-5 py-2.5
+  rounded-full
+  bg-gradient-to-r
+  from-purple-500
+  to-blue-600
+  flex items-center gap-2
+  font-medium
+  transition-all duration-300
+  hover:scale-105
+  hover:-translate-y-1
+  hover:shadow-[0_0_35px_rgba(139,92,246,0.45)]
+  active:scale-95
+"
+>
                   Start Voice Assistant
-
                 </button>
-
               </Link>
 
               <Link href="/schemes">
-
-                <button className="px-8 py-4 rounded-full border border-white/10 bg-white/10 hover:bg-white/20 transition-all">
-
+               <button
+  className="
+  px-5 py-2.5
+  rounded-full
+  border border-white/10
+  bg-white/5
+  font-medium
+  transition-all duration-300
+  hover:bg-white/10
+  hover:border-white/20
+  hover:-translate-y-1
+"
+>
                   Explore Schemes
-
                 </button>
-
               </Link>
-
             </div>
 
           </div>
+       </motion.div>
 
-        </div>
+        {/* DASHBOARD GRID */}
+        <div className="grid lg:grid-cols-3 gap-5 mt-6">
 
-        {/* GRID */}
-        <div className="grid lg:grid-cols-3 gap-8 mt-10">
+          {/* LEFT SECTION */}
+          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5">
 
-          {/* LEFT LARGE */}
-          <MovingCard className="lg:col-span-2">
             <div className="flex items-center justify-between">
-
               <div>
 
-                <p className="text-purple-300 uppercase tracking-[0.2em] text-sm">
-                  AI Insights
+                <p className="text-purple-300 uppercase tracking-[0.25em] text-xs">
+                  Personalized Recommendations
                 </p>
 
-                <h2 className="text-4xl font-bold mt-3">
+                <h2 className="text-3xl font-bold mt-1">
                   Recommended For You
                 </h2>
 
               </div>
 
-              <Sparkles className="text-purple-400" size={40} />
+              <Sparkles
+                className="text-purple-400"
+                size={32}
+              />
 
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 mt-10">
+            <div className="grid md:grid-cols-2 gap-3 mt-5">
 
               {[
                 {
                   title: "Ayushman Bharat",
                   desc: "Free healthcare coverage up to ₹5 lakh.",
                 },
-
                 {
                   title: "PM Kisan",
                   desc: "Income support for farmers.",
                 },
-
               ].map((item, index) => (
-
-                <MovingCard key={index}>
-
-                  <h3 className="text-2xl font-semibold">
+                <div
+                  key={index}
+                  className="
+                    rounded-2xl
+                    border
+                    border-white/10
+                    bg-white/[0.03]
+                    p-4
+                    hover:bg-white/[0.05]
+                    transition-all
+                    flex
+                    flex-col
+                  "
+                >
+                  <h3 className="text-lg font-semibold">
                     {item.title}
                   </h3>
 
-                  <p className="text-gray-400 mt-3">
+                  <p className="text-slate-400 mt-1 text-sm leading-relaxed">
                     {item.desc}
                   </p>
 
-                  <button className="mt-6 px-5 py-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-600">
-
+                  <button className="mt-3 w-fit px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-600 text-sm font-medium">
                     View Details
-
                   </button>
-
-                </MovingCard>
-
+                </div>
               ))}
 
             </div>
 
-          </MovingCard>
+          </div>
 
-          {/* RIGHT SIDE */}
-          <div className="flex flex-col gap-6">
+          {/* RIGHT SECTION */}
+          <div className="flex flex-col gap-4">
 
-            {/* Card 1 */}
-            <MovingCard>
+            {/* Stats Card 1 */}
+            <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4">
+
               <div className="flex items-center justify-between">
 
                 <div>
-
-                  <p className="text-gray-400">
+                  <p className="text-slate-400 text-sm">
                     Schemes Matched
                   </p>
 
-                  <h2 className="text-5xl font-bold mt-3">
+                  <h2 className="text-4xl font-black mt-1">
                     24
                   </h2>
-
                 </div>
 
                 <ShieldCheck
-                  size={45}
+                  size={38}
                   className="text-green-400"
                 />
 
               </div>
 
-            </MovingCard>
+            </div>
 
-            {/* Card 2 */}
-            <MovingCard>
+            {/* Stats Card 2 */}
+            <div className="
+rounded-3xl
+border border-white/10
+bg-white/[0.04]
+backdrop-blur-xl
+p-4
+transition-all duration-300
+hover:-translate-y-1
+hover:border-white/20
+hover:bg-white/[0.06]
+hover:shadow-xl">
+
+
               <div className="flex items-center justify-between">
 
                 <div>
-
-                  <p className="text-gray-400">
+                  <p className="text-slate-400 text-sm">
                     Documents Explained
                   </p>
 
-                  <h2 className="text-5xl font-bold mt-3">
+                  <h2 className="text-4xl font-black mt-1">
                     12
                   </h2>
-
                 </div>
 
                 <FileText
-                  size={45}
+                  size={38}
                   className="text-blue-400"
                 />
 
               </div>
 
-            </MovingCard>
+            </div>
 
-            {/* Card 3 */}
-            <MovingCard>
-              <h3 className="text-2xl font-semibold">
+            {/* Quick Actions */}
+            <div className="
+rounded-3xl
+border border-white/10
+bg-white/[0.04]
+backdrop-blur-xl
+p-4
+transition-all duration-300
+hover:border-purple-500/20
+">
+
+              <h3 className="text-lg font-bold">
                 Quick Actions
               </h3>
 
-              <div className="space-y-4 mt-6">
+              <div className="space-y-2 mt-3">
 
                 <Link href="/voice">
-
-                  <button className="w-full py-4 rounded-2xl bg-white/10 hover:bg-white/20 transition-all">
-
+                  <button className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
                     Voice Assistant
-
                   </button>
-
                 </Link>
 
                 <Link href="/schemes">
-
-                  <button className="w-full py-4 rounded-2xl bg-white/10 hover:bg-white/20 transition-all">
-
+                  <button className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
                     Check Eligibility
-
                   </button>
-
                 </Link>
 
               </div>
 
-            </MovingCard>
+            </div>
 
           </div>
 
         </div>
 
       </section>
-
     </main>
   );
 }
