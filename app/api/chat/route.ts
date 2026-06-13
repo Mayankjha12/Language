@@ -9,21 +9,22 @@ const openai = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message } = body; // Seamless interface: no manual language parameter forced from frontend
-
-    console.log(`💬 JanMitra Processing Auto-Language Query: "${message}"`);
+    const { message } = body; 
 
     if (!message || message.trim() === "") {
       return NextResponse.json({ reply: "कृपया अपना प्रश्न टाइप करें। / Please type your query." });
     }
 
-    // 🌟 MULTI-LINGUAL AUTO-DETECTION ENGINE DIRECTIVE
-    const systemPrompt = `You are JanMitra AI, an expert citizen services chatbot. Your absolute directive is to dynamically analyze the language of the user's input.
-- If the user types in Hindi (Devnagari) or Hinglish (Hindi written in Roman script like 'yojana kya hai'), you MUST respond entirely in clean, simple, everyday conversational Hindi (Devnagari Script).
-- If the user types in English, respond entirely in clear, professional English.
-- For any other major Indian regional language input, detect it and respond in that specific language using its native script.
+    const systemPrompt = `You are JanMitra AI, an expert citizen services chatbot. Respond in Hindi if the user writes in Hindi/Hinglish, and English if they write in English.
 
-Keep your answer highly conversational, well-structured with clean line breaks, short paragraphs, and actionable bullet points. Avoid raw markdown code blocks like \`\`\`json.`;
+STRICT LINK ROUTING INSTRUCTION:
+If the user's query relates to any of our 3 core portal features, you MUST explicitly include these exact routing tags in your text response so the UI can render direct navigation buttons:
+- For Schemes/Pensions/Eligibility, include exactly: [ROUTE:schemes]
+- For Civic Grievances/Complaints/Water/Garbage issues, include exactly: [ROUTE:complaints]
+- For Document Analysis/Summarization/Reading files, include exactly: [ROUTE:documents]
+
+Example behavior: "You can find all government pension schemes under our dedicated tool: [ROUTE:schemes]"
+If the topic is general and not in our app, do not include any ROUTE tag. Keep response brief and structured.`;
 
     let replyText = "";
     try {
@@ -36,55 +37,41 @@ Keep your answer highly conversational, well-structured with clean line breaks, 
           ],
           temperature: 0.2,
         },
-        { timeout: 8500 } // Guardrail to prevent infinite UI loading wheels
+        { timeout: 8500 }
       );
-
       replyText = completion.choices[0].message.content?.trim() || "";
     } catch (apiError) {
-      console.warn("⚠️ Chat API congestion detected. Launching active fallback overlay routing.", apiError);
+      console.warn("⚠️ API Delay fallback bypass active.");
     }
 
-    // ─── ⚡ CHAT THREAD FAIL-SAFE RE-ENFORCEMENT MATRIX ────────────────────────
+    // Fallback Matrix with exact navigation tags embedded
     if (!replyText || replyText.length < 3) {
-      console.log("⚡ Triggering clean contextual backup response block.");
-      
       const lowerMessage = message.toLowerCase();
-      // Check if query matrix patterns lean towards localized terms
-      const isHindiQuery = /[\u0900-\u097F]/.test(message) || lowerMessage.includes("yojana") || lowerMessage.includes("shikayat") || lowerMessage.includes("paani");
+      const isHindiQuery = /[\u0900-\u097F]/.test(message) || lowerMessage.includes("yojana") || lowerMessage.includes("shikayat");
       
       if (isHindiQuery) {
-        if (lowerMessage.includes("scheme") || lowerMessage.includes("योजना")) {
-          replyText = `नमस्ते! मैं आपका जनमित्र एआई सहायक हूँ। आपके प्रश्न के अनुसार त्वरित निर्देश:
-- आप हमारे 'Discover Eligible Schemes' टैब में जाकर अपनी प्रोफाइल (उम्र, आय, श्रेणी) भरकर सही सरकारी योजनाएं ढूंढ सकते हैं।
-- आयुष्मान भारत और पीएम आवास योजना जैसी मुख्य कल्याणकारी नीतियों की विस्तृत जानकारी आपको वहां मिल जाएगी।
-कृपया अपना विशिष्ट प्रश्न जारी रखें, मैं पूरी तरह तैयार हूँ!`;
+        if (lowerMessage.includes("scheme") || lowerMessage.includes("योजना") || lowerMessage.includes("pension")) {
+          replyText = `नमस्ते! सरकारी योजनाओं की खोज और अपनी पात्रता जांचने के लिए आप सीधे हमारे इस टूल का उपयोग कर सकते हैं: [ROUTE:schemes]`;
+        } else if (lowerMessage.includes("complaint") || lowerMessage.includes("शिकायत")) {
+          replyText = `नमस्ते! नगर निगम या पानी/कचरे की शिकायत के लिए एआई ड्राफ्ट तैयार करने हेतु यहां क्लिक करें: [ROUTE:complaints]`;
         } else {
-          replyText = `नमस्ते! मैं आपका जनमित्र एआई सहायक हूँ। इस समय सर्वर रिस्पॉन्स में थोड़े विलंब के कारण मैं पूर्ण विश्लेषण लोड नहीं कर पाया।
-- यदि आपका प्रश्न किसी प्रशासनिक शिकायत से जुड़ा है, तो कृपया 'Draft & File Complaints' विकल्प का उपयोग करें।
-- अन्य नागरिक सेवाओं (जैसे राशन कार्ड, प्रमाणपत्र पंजीकरण) के लिए कृपया अपना विवरण नीचे पुनः टाइप करें।`;
+          replyText = `नमस्ते! दस्तावेज़ों को सरल भाषा में समझने के लिए आप इस सेवा का उपयोग करें: [ROUTE:documents]`;
         }
       } else {
-        if (lowerMessage.includes("scheme") || lowerMessage.includes("welfare")) {
-          replyText = `Hello! I am JanMitra AI, your dedicated citizen services assistant. Regarding welfare configurations:
-- Please navigate directly to the 'Discover Eligible Schemes' tab on the dashboard to filter central and state policies matching your profile.
-- You can find step-by-step criteria for healthcare, housing, and scholarship programs there.
-Please drop your exact question again, and I will assist you immediately!`;
+        if (lowerMessage.includes("scheme") || lowerMessage.includes("pension")) {
+          replyText = `Hello! You can easily check your eligibility for welfare policies directly using our service: [ROUTE:schemes]`;
+        } else if (lowerMessage.includes("complaint") || lowerMessage.includes("grievance")) {
+          replyText = `Hello! To generate an official grievance draft file, access our platform terminal: [ROUTE:complaints]`;
         } else {
-          replyText = `Hello! I am JanMitra AI, your governance companion. The system is experiencing a brief connection delay.
-- For legal grievance submissions, please access the 'Draft & File Complaints' console.
-- For document summary extraction, check out the 'Document Explainer' panel.
-Please re-state your query, and I'll outline the operational steps for you!`;
+          replyText = `Hello! For analyzing complex official papers, head over to: [ROUTE:documents]`;
         }
       }
     }
 
-    // Strip out erratic syntax markers before dispatching data payload to the client thread
     replyText = replyText.replace(/[*#`"]/g, "").trim();
-
     return NextResponse.json({ reply: replyText });
 
   } catch (error) {
-    console.error("❌ Critical breakdown inside chat route controller:", error);
-    return NextResponse.json({ reply: "Connection timeout. Please try processing your message again." }, { status: 500 });
+    return NextResponse.json({ reply: "Connection timeout. Please try again." }, { status: 500 });
   }
 }
