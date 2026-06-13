@@ -60,7 +60,6 @@ export default function AskAIPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [helpLanguage, setHelpLanguage] = useState("english");
 
   // Premium Array Thread State to completely secure chat logs from keyboard blur events
   const [chatHistory, setChatHistory] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
@@ -152,16 +151,15 @@ export default function AskAIPage() {
   };
 
   const askQuestions = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Lock synthetic bubble submission cycles
+    e.preventDefault(); 
     try {
       const res = await axios.post("/api/complaints/questions", { issue, issueType, language });
       setQuestions(res.data.questions || []);
     } catch (error) { console.log(error); }
   };
 
-  // 🌟 CRITICAL FIX: Locks the incoming response parameters safely into state without component unmounting triggers
   const generateComplaint = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Absolutely block stray anchor reloads
+    e.preventDefault(); 
     try {
       setComplaintLoading(true);
       
@@ -210,6 +208,7 @@ export default function AskAIPage() {
         language: docLanguage 
       });
 
+      // 🌟 STABLE VALUE CAPTURE: Normalizes object parsing structure safely
       setAnalysisResult(analyzeRes.data);
     } catch (error) { 
       console.log(error); 
@@ -474,7 +473,7 @@ export default function AskAIPage() {
                     >
                       <option value="">{language === "hindi" ? "समस्या का प्रकार चुनें" : "Select Issue Type"}</option>
                       <option value="Water Supply">{language === "hindi" ? "जल आपूर्ति (Water Supply)" : "Water Supply"}</option>
-                      <option value="Electricity">{language === "hindi" ? "बिजली समस्या (Electricity)" : "Electricity"}</option>
+                      <option value="Electricity">{language === "hindi" ? "बिजلی समस्या (Electricity)" : "Electricity"}</option>
                       <option value="Road Damage">{language === "hindi" ? "सड़क क्षति (Road Damage)" : "Road Damage"}</option>
                       <option value="Garbage">{language === "hindi" ? "कचरा प्रबंधन (Garbage)" : "Garbage"}</option>
                     </select>
@@ -662,52 +661,81 @@ export default function AskAIPage() {
                       </div>
                     )}
 
+                    {/* 🌟 DYNAMIC RENDERING MACHINE FOR DOCUMENTS TAB */}
                     {analysisResult && (
                       <>
-                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "उद्देश्य" : "Purpose"}
-                          </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">
-                            {analysisResult["उद्देश्य"] || analysisResult.purpose}
-                          </p>
-                        </div>
+                        {(() => {
+                          // Check if the backend sent a flat string instead of an object map
+                          if (typeof analysisResult === "string" || analysisResult.text) {
+                            const rawText = typeof analysisResult === "string" ? analysisResult : analysisResult.text;
+                            return (
+                              <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                  {docLanguage === "hindi" ? "दस्तावेज़ विश्लेषण रिपोर्ट" : "Extracted Analysis Text"}
+                                </h3>
+                                <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                                  {rawText}
+                                </p>
+                              </div>
+                            );
+                          }
 
-                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां" : "Important Dates"}
-                          </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">
-                            {analysisResult["महत्वपूर्ण_तिथियां"] || analysisResult.dates}
-                          </p>
-                        </div>
+                          // Object processing fallback loop matching standard backend key formats dynamically
+                          const purposeVal = analysisResult["उद्देश्य"] || analysisResult.purpose || analysisResult.Purpose;
+                          const datesVal = analysisResult["महत्वपूर्ण_तिथियां"] || analysisResult.dates || analysisResult.Important_Dates || analysisResult.Dates;
+                          const docsVal = analysisResult["आवश्यक_दस्तावेज"] || analysisResult.requiredDocs || analysisResult.Required_Documents || analysisResult.documents;
+                          const actionsVal = analysisResult["आवश्यक_कार्रवाई"] || analysisResult.actions || analysisResult.Actions_Needed || analysisResult.actionsNeeded;
+                          const summaryVal = analysisResult["संक्षिप्त_सारांश"] || analysisResult.summary || analysisResult.Simple_Summary || analysisResult.summaryText;
 
-                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "आवश्यक दस्तावेज" : "Required Documents"}
-                          </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">
-                            {analysisResult["आवश्यक_दस्तावेज"] || analysisResult.requiredDocs}
-                          </p>
-                        </div>
+                          return (
+                            <>
+                              {purposeVal && (
+                                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                    {docLanguage === "hindi" ? "उद्देश्य" : "Purpose"}
+                                  </h3>
+                                  <p className="text-white/70 text-sm leading-relaxed">{purposeVal}</p>
+                                </div>
+                              )}
 
-                        <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "आवश्यक कार्रवाई" : "Actions Needed"}
-                          </h3>
-                          <p className="text-white/70 text-sm leading-relaxed">
-                            {analysisResult["आवश्यक_कार्रवाई"] || analysisResult.actions}
-                          </p>
-                        </div>
+                              {datesVal && (
+                                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                    {docLanguage === "hindi" ? "महत्वपूर्ण तिथियां" : "Important Dates"}
+                                  </h3>
+                                  <p className="text-white/70 text-sm leading-relaxed">{datesVal}</p>
+                                </div>
+                              )}
 
-                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                            {docLanguage === "hindi" ? "सरल सारांश" : "Simple Summary"}
-                          </h3>
-                          <p className="text-white/90 text-sm font-medium leading-relaxed">
-                            {analysisResult["संक्षिप्त_सारांश"] || analysisResult.summary}
-                          </p>
-                        </div>
+                              {docsVal && (
+                                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                    {docLanguage === "hindi" ? "आवश्यक दस्तावेज" : "Required Documents"}
+                                  </h3>
+                                  <p className="text-white/70 text-sm leading-relaxed">{docsVal}</p>
+                                </div>
+                              )}
+
+                              {actionsVal && (
+                                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-5">
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                    {docLanguage === "hindi" ? "आवश्यक कार्रवाई" : "Actions Needed"}
+                                  </h3>
+                                  <p className="text-white/70 text-sm leading-relaxed">{actionsVal}</p>
+                                </div>
+                              )}
+
+                              {summaryVal && (
+                                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5">
+                                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                                    {docLanguage === "hindi" ? "सरल सारांश" : "Simple Summary"}
+                                  </h3>
+                                  <p className="text-white/90 text-sm font-medium leading-relaxed">{summaryVal}</p>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </>
                     )}
                   </div>
@@ -746,7 +774,6 @@ export default function AskAIPage() {
                             : "bg-white/[0.05] border border-white/[0.08] text-blue-100 rounded-tl-none"
                         }`}
                       >
-                        {/* 🌟 DYNAMIC TAG PARSER: Renders navigation buttons inline without page refresh */}
                         {(() => {
                           if (chat.role === "user") return chat.text;
 
