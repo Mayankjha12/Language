@@ -117,29 +117,28 @@ export async function POST(req: Request) {
     const { documentText, language } = body;
     const targetLang = (language || "english").toLowerCase();
 
-    const systemPrompt = `You are JanMitra AI. Analyze the document and return a JSON object.
-    RULES:
-    1. Everything (purpose, dates, requiredDocs, actions, summary) MUST be in the requested language: ${targetLang}.
-    2. If language is 'hindi', use Hindi (Devnagari). If 'english', use English.
-    3. JSON Keys: 
-       - If Hindi: "उद्देश्य", "महत्वपूर्ण_तिथियां", "आवश्यक_दस्तावेज", "आवश्यक_कार्रवाई", "संक्षिप्त_सारांश"
-       - If English: "purpose", "dates", "requiredDocs", "actions", "summary"
-    4. Return ONLY valid raw JSON. No markdown, no conversational text.`;
+    // System prompt ko aur precise banaya hai taaki output hamesha valid JSON ho
+    const systemPrompt = `You are JanMitra AI, a professional government document analyzer.
+    Extract key information into a JSON object.
+    IF language is 'hindi', use these keys: "उद्देश्य", "महत्वपूर्ण_तिथियां", "आवश्यक_दस्तावेज", "आवश्यक_कार्रवाई", "संक्षिप्त_सारांश"
+    IF language is 'english', use these keys: "purpose", "dates", "requiredDocs", "actions", "summary"
+    RETURN ONLY RAW JSON. NO MARKDOWN. NO BACKTICKS.`;
 
     const completion = await openai.chat.completions.create({
       model: "sarvam-30b",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Document: ${documentText}` }
+        { role: "user", content: `Please provide analysis in ${targetLang} language for this document: ${documentText}` }
       ],
       temperature: 0.1,
     });
 
     let outputText = completion.choices[0].message.content?.trim() || "{}";
     
-    // FIX: Regex ko ek hi line mein likha gaya hai
+    // Clean markdown blocks
     outputText = outputText.replace(/```json/g, "").replace(/```/g, "").trim();
     
+    // Extract JSON part if model adds extra text
     if (outputText.includes("{")) {
       outputText = outputText.substring(outputText.indexOf("{"), outputText.lastIndexOf("}") + 1);
     }
@@ -150,4 +149,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
-
