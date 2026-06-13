@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "react";
+import axios from "axios";
 
 type Tab = "home" | "schemes" | "complaints" | "documents" | "help";
 
@@ -121,11 +121,12 @@ export default function AskAIPage() {
     setLoading(true);
 
     try {
+      // Yeh line ab sahi kaam karegi kyunki import fix kar diya hai
       const res = await axios.post("/api/chat", { message: userQuery });
       setChatHistory(prev => [...prev, { role: "assistant", text: res.data.reply }]);
     } catch (error) {
       console.log(error);
-      setChatHistory(prev => [...prev, { role: "assistant", text: "सिस्टम कनेक्शन त्रुटि। कृपया पुनः प्रयास करें।" }]);
+      setChatHistory(prev => [...prev, { role: "assistant", text: "Error connecting to AI." }]);
     } finally {
       setLoading(false);
     }
