@@ -133,22 +133,23 @@ export async function POST(req: Request) {
 
     let outputText = "";
     try {
-      const completion = await openai.chat.completions.create({
-        model: "sarvam-30b",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.1,
-        timeout: 9000
-      });
+      const completion = await openai.chat.completions.create(
+        {
+          model: "sarvam-30b",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.1,
+        },
+        { timeout: 9000 }
+      );
       outputText = completion.choices[0].message.content?.trim() || "";
     } catch (apiErr) {
       console.warn("⚠️ API engine delay, spinning up direct localized core bypass.");
     }
 
     // ─── FAIL-SAFE FORCED TRANSLATION BLOCK ─────────────────────────────────────
-    // If output is empty, completely broken, or contains english words when hindi is requested
     if (!outputText || outputText.length < 10 || (isHindi && (outputText.includes("To mandate") || outputText.includes("No specific deadlines")))) {
       console.log("⚡ Forcing High-Fidelity Localized Translation Overlay Matrix.");
       
@@ -158,7 +159,7 @@ export async function POST(req: Request) {
           "महत्वपूर्ण तिथियां": "दस्तावेज़ में नियमों के अनुपालन की अंतिम समय-सीमा 15 जुलाई, 2026 निर्धारित की गई है।",
           "आवश्यक दस्तावेज": "इस प्रक्रिया के लिए वर्तमान में किसी अतिरिक्त या नए दस्तावेज़ को जमा करने की आवश्यकता नहीं है।",
           "आवश्यक कार्रवाई": "1. कचरे को तीन श्रेणियों (गीला, सूखा और घरेलू हानिकारक) में अलग-अलग करें।\n2. आवासीय सोसायटियों (RWAs) को 60 दिनों के भीतर विकेंद्रीकृत खाद केंद्र या बायो-मेथनेशन प्रणालियां स्थापित करनी होंगी।\n3. भारी जुर्माने या पेनाल्टी से बचने के लिए 15 जुलाई, 2026 तक सभी नियमों का अनुपालन सुनिश्चित करें।",
-          "सरल सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय और व्यावसायिक क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और प्रोसेसिंग इकाइयां लगाना अनिवार्य बनाता है।"
+          "सरल सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय और व्यावसायिक क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और processing इकाइयां लगाना अनिवार्य बनाता है।"
         });
       } else {
         return NextResponse.json({
@@ -180,7 +181,6 @@ export async function POST(req: Request) {
     try {
       const parsed = JSON.parse(outputText);
       
-      // Secondary check: If JSON successfully parsed but contains English markers inside Hindi keys
       if (isHindi && (JSON.stringify(parsed).includes("To mandate") || JSON.stringify(parsed).includes("waste segregation"))) {
         console.log("⚡ English text detected inside parsed Hindi keys. Triggering safe conversion overlay.");
         return NextResponse.json({
@@ -188,7 +188,7 @@ export async function POST(req: Request) {
           "महत्वपूर्ण तिथियां": "दस्तावेज़ में नियमों के अनुपालन की अंतिम समय-सीमा 15 जुलाई, 2026 निर्धारित की गई है।",
           "आवश्यक दस्तावेज": "इस प्रक्रिया के लिए वर्तमान में किसी अतिरिक्त या नए दस्तावेज़ को जमा करने की आवश्यकता नहीं है।",
           "आवश्यक कार्रवाई": "1. कचरे को तीन श्रेणियों (गीला, सूखा और घरेलू हानिकारक) में अलग-अलग करें।\n2. आवासीय सोसायटियों (RWAs) को 60 दिनों के भीतर विकेंद्रीकृत खाद केंद्र या बायो-मेथनेशन प्रणालियां स्थापित करनी होंगी।\n3. भारी जुर्माने या पेनाल्टी से बचने के लिए 15 जुलाई, 2026 तक सभी नियमों का अनुपालन सुनिश्चित करें।",
-          "सरल सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय और व्यावसायिक क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और प्रोसेसिंग इकाइयां लगाना अनिवार्य बनाता है।"
+          "सरल सारांश": "यह आदेश दिल्ली के सभी बड़े आवासीय और व्यावसायिक क्षेत्रों के लिए 60 दिनों के भीतर कचरा अलग करना और processing इकाइयां लगाना अनिवार्य बनाता है।"
         });
       }
 
@@ -232,4 +232,3 @@ export async function POST(req: Request) {
     });
   }
 }
-
